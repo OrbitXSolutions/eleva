@@ -1,0 +1,2 @@
+-- Copy the eleva_database_public_schema_context.sql content here
+-- This will be used with prisma db pull to generate the Prisma schema

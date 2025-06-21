@@ -7,18 +7,10 @@ const nextConfig = {
   },
   images: {
     unoptimized: true,
-    domains: ["placeholder.svg"],
-    formats: ["image/webp", "image/avif"],
+    domains: ['placeholder.svg'],
+    formats: ['image/webp', 'image/avif'],
   },
   experimental: {
-    turbo: {
-      rules: {
-        "*.svg": {
-          loaders: ["@svgr/webpack"],
-          as: "*.js",
-        },
-      },
-    },
     optimizeCss: true,
   },
   compress: true,

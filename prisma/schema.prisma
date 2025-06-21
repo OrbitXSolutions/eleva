@@ -1,0 +1,165 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id         BigInt    @id @default(autoincrement())
+  userId     String?   @unique @map("user_id") @db.Uuid
+  email      String    @unique
+  firstName  String?   @map("first_name")
+  lastName   String?   @map("last_name")
+  avatar     String?
+  phone      String?
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime? @map("updated_at") @db.Timestamptz(6)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(6)
+  isDeleted  Boolean   @default(false) @map("is_deleted")
+  isBanned   Boolean   @default(false) @map("is_banned")
+  createdBy  String?   @map("created_by")
+  updatedBy  String?   @map("updated_by")
+  deletedBy  String?   @map("deleted_by")
+  isAdmin    Boolean   @default(false) @map("is_admin")
+
+  addresses  Address[]
+  cartItems  CartItem[]
+  reviews    Review[]
+  favorites  Favorite[]
+
+  @@map("users")
+}
+
+model Product {
+  id              BigInt    @id @default(autoincrement())
+  nameEn          String?   @map("name_en")
+  nameAr          String?   @map("name_ar")
+  descriptionEn   String?   @map("description_en")
+  descriptionAr   String?   @map("description_ar")
+  slug            String?   @unique
+  slugAr          String?   @unique @map("slug_ar")
+  totalRates      Float?    @map("total_rates")
+  ratesCount      BigInt?   @map("rates_count")
+  price           Float?
+  oldPrice        Float?    @map("old_price")
+  quantity        BigInt?
+  attributes      Json?
+  variantGroup    String?   @map("variant_group")
+  primaryImage    String?   @map("primary_image")
+  images          String[]
+  categoryId      BigInt?   @map("category_id")
+  countryCode     String?   @map("country_code")
+  currencyCode    String?   @map("currency_code")
+  metaThumbnail   String?   @map("meta_thumbnail")
+  metaTitleEn     String?   @map("meta_title_en")
+  metaTitleAr     String?   @map("meta_title_ar")
+  metaDescriptionEn String? @map("meta_description_en")
+  metaDescriptionAr String? @map("meta_description_ar")
+  isDeleted       Boolean   @default(false) @map("is_deleted")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt       DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdBy       String?   @map("created_by")
+  updatedBy       String?   @map("updated_by")
+  deletedBy       String?   @map("deleted_by")
+  adminNote       String?   @map("admin_note")
+  keywords        String?
+  sku             String?   @unique
+
+  category   Category? @relation(fields: [categoryId], references: [id])
+  cartItems  CartItem[]
+  reviews    Review[]
+  favorites  Favorite[]
+
+  @@map("products")
+}
+
+model Category {
+  id               BigInt    @id @default(autoincrement())
+  nameEn           String?   @map("name_en")
+  nameAr           String?   @map("name_ar")
+  slug             String    @unique
+  slugAr           String    @unique @map("slug_ar")
+  image            String?
+  metaTitleEn      String?   @map("meta_title_en")
+  metaTitleAr      String?   @map("meta_title_ar")
+  metaDescriptionEn String?  @map("meta_description_en")
+  metaDescriptionAr String?  @map("meta_description_ar")
+  isDeleted        Boolean   @default(false) @map("is_deleted")
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdBy        String?   @map("created_by")
+  updatedBy        String?   @map("updated_by")
+  deletedBy        String?   @map("deleted_by")
+
+  products Product[]
+
+  @@map("categories")
+}
+
+model Review {
+  id         BigInt    @id @default(autoincrement())
+  userId     BigInt?   @map("user_id")
+  name       String?
+  avatar     String?
+  productId  BigInt?   @map("product_id")
+  rating     Float?
+  comment    String?
+  images     String[]
+  isApproved Boolean   @default(false) @map("is_approved")
+  isDeleted  Boolean   @default(false) @map("is_deleted")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime? @map("updated_at") @db.Timestamptz(6)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdBy  String?   @map("created_by")
+  updatedBy  String?   @map("updated_by")
+  deletedBy  String?   @map("deleted_by")
+
+  user    User?    @relation(fields: [userId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onUpdate: Cascade, onDelete: Cascade)
+
+  @@map("reviews")
+}
+
+model CartItem {
+  id        BigInt   @id @default(autoincrement())
+  userId    BigInt   @map("user_id")
+  productId BigInt   @map("product_id")
+  quantity  Int      @default(1)
+  isDeleted Boolean  @default(false) @map("is_deleted")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId], name: "cart_items_user_product_variant_unique")
+  @@map("cart_items")
+}
+
+model Favorite {
+  id        BigInt @id @default(autoincrement())
+  userId    BigInt @map("user_id")
+  productId BigInt @map("product_id")
+
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId])
+  @@map("favorites")
+}
+
+model Address {
+  id        BigInt  @id @default(autoincrement())
+  userId    BigInt  @map("user_id")
+  stateCode String? @map("state_code")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("addresses")
+}

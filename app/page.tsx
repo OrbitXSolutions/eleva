@@ -1,103 +1,144 @@
-import Image from "next/image";
+import { headers } from "next/headers"
+import { Header } from "@/app/components/Header"
+import { Hero } from "@/app/components/Hero"
+import { ProductCard } from "@/components/ProductCard"
+import { ContactForm } from "@/components/ContactForm"
+import { prisma } from "@/lib/prisma"
+import { createClient } from "@/utils/supabase/server"
+import type { Locale } from "@/lib/i18n"
 
-export default function Home() {
+// Mock data for demonstration
+const mockProducts = [
+  {
+    id: 1,
+    name: "Midnight Rose",
+    brand: "Luxe Collection",
+    price: 89.99,
+    originalPrice: 109.99,
+    image: "/placeholder.svg?height=400&width=300",
+    rating: 4.8,
+    reviews: 234,
+    isNew: true,
+  },
+  {
+    id: 2,
+    name: "Ocean Breeze",
+    brand: "Fresh Scents",
+    price: 65.99,
+    image: "/placeholder.svg?height=400&width=300",
+    rating: 4.6,
+    reviews: 189,
+    isNew: true,
+  },
+  {
+    id: 3,
+    name: "Golden Amber",
+    brand: "Premium Line",
+    price: 125.99,
+    image: "/placeholder.svg?height=400&width=300",
+    rating: 4.9,
+    reviews: 156,
+    isNew: true,
+  },
+  {
+    id: 4,
+    name: "Vanilla Dreams",
+    brand: "Sweet Collection",
+    price: 75.99,
+    image: "/placeholder.svg?height=400&width=300",
+    rating: 4.7,
+    reviews: 145,
+    isNew: true,
+  },
+]
+
+interface PageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+export default async function HomePage({ searchParams }: PageProps) {
+  const headersList = await headers()
+  const locale = (headersList.get("x-locale") as Locale) || "en"
+
+  // Get user session
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  // Fetch products from database (fallback to mock data)
+  let products = mockProducts
+  try {
+    const dbProducts = await prisma.product.findMany({
+      where: { isDeleted: false },
+      take: 8,
+      orderBy: { createdAt: "desc" },
+    })
+
+    if (dbProducts.length > 0) {
+      products = dbProducts.map((product) => ({
+        id: Number(product.id),
+        name: locale === "ar" ? product.nameAr || product.nameEn || "" : product.nameEn || "",
+        brand: "Premium Brand", // You might want to add brand relation
+        price: product.price || 0,
+        originalPrice: product.oldPrice || undefined,
+        image: product.primaryImage || "/placeholder.svg?height=400&width=300",
+        rating: (product.totalRates || 0) / Math.max(Number(product.ratesCount) || 1, 1),
+        reviews: Number(product.ratesCount) || 0,
+        isNew: new Date(product.createdAt).getTime() > Date.now() - 30 * 24 * 60 * 60 * 1000, // 30 days
+      }))
+    }
+  } catch (error) {
+    console.error("Error fetching products:", error)
+    // Use mock data as fallback
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <main className="min-h-screen" dir={locale === "ar" ? "rtl" : "ltr"}>
+      <Header locale={locale} />
+      <Hero locale={locale} />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* New Arrivals Section */}
+      <section className="py-16 bg-muted/50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
+              {locale === "ar" ? "الوصولات الجديدة" : "New Arrivals"}
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              {locale === "ar"
+                ? "كن أول من يجرب مجموعات العطور الجديدة لدينا"
+                : "Be the first to experience our latest fragrance collections"}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {products.map((product) => (
+              <ProductCard key={product.id} {...product} locale={locale} />
+            ))}
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+      </section>
+
+      {/* Contact Section */}
+      <section className="py-16 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
+              {locale === "ar" ? "تواصل معنا" : "Get in Touch"}
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              {locale === "ar"
+                ? "هل لديك أسئلة حول عطورنا؟ نحن هنا لمساعدتك في العثور على عطرك المثالي."
+                : "Have questions about our fragrances? We're here to help you find your perfect scent."}
+            </p>
+          </div>
+
+          <div className="max-w-2xl mx-auto">
+            <ContactForm locale={locale} />
+          </div>
+        </div>
+      </section>
+    </main>
+  )
 }
