@@ -1,11 +1,11 @@
-import Link from "next/link"
-import { Facebook, Instagram, Twitter, Youtube, Mail } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { getCategories } from "@/lib/supabase-queries"
+import Link from "next/link";
+import { Facebook, Instagram, Twitter, Youtube, Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { getCategories } from "@/lib/common/supabase-queries";
 
 export default async function Footer() {
-  const categories = await getCategories()
+  const categories = await getCategories();
 
   return (
     <footer className="bg-gray-900 text-white">
@@ -16,21 +16,37 @@ export default async function Footer() {
             <div>
               <h3 className="text-2xl font-bold mb-4">Luxe Perfumes</h3>
               <p className="text-gray-400 leading-relaxed">
-                Discover the world's finest fragrances. We curate premium perfumes from the most prestigious brands
-                worldwide.
+                Discover the world's finest fragrances. We curate premium
+                perfumes from the most prestigious brands worldwide.
               </p>
             </div>
             <div className="flex space-x-4">
-              <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white p-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-400 hover:text-white p-2"
+              >
                 <Facebook className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white p-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-400 hover:text-white p-2"
+              >
                 <Instagram className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white p-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-400 hover:text-white p-2"
+              >
                 <Twitter className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white p-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-400 hover:text-white p-2"
+              >
                 <Youtube className="h-5 w-5" />
               </Button>
             </div>
@@ -41,32 +57,50 @@ export default async function Footer() {
             <h4 className="text-lg font-semibold mb-6">Quick Links</h4>
             <ul className="space-y-3">
               <li>
-                <Link href="/about" className="text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/about"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
                   About Us
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/contact"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
                   Contact
                 </Link>
               </li>
               <li>
-                <Link href="/shipping" className="text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/shipping"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
                   Shipping Info
                 </Link>
               </li>
               <li>
-                <Link href="/returns" className="text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/returns"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
                   Returns
                 </Link>
               </li>
               <li>
-                <Link href="/size-guide" className="text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/size-guide"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
                   Size Guide
                 </Link>
               </li>
               <li>
-                <Link href="/faq" className="text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/faq"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
                   FAQ
                 </Link>
               </li>
@@ -91,32 +125,50 @@ export default async function Footer() {
               ) : (
                 <>
                   <li>
-                    <Link href="/women" className="text-gray-400 hover:text-white transition-colors">
+                    <Link
+                      href="/women"
+                      className="text-gray-400 hover:text-white transition-colors"
+                    >
                       Women's Perfumes
                     </Link>
                   </li>
                   <li>
-                    <Link href="/men" className="text-gray-400 hover:text-white transition-colors">
+                    <Link
+                      href="/men"
+                      className="text-gray-400 hover:text-white transition-colors"
+                    >
                       Men's Cologne
                     </Link>
                   </li>
                   <li>
-                    <Link href="/unisex" className="text-gray-400 hover:text-white transition-colors">
+                    <Link
+                      href="/unisex"
+                      className="text-gray-400 hover:text-white transition-colors"
+                    >
                       Unisex Fragrances
                     </Link>
                   </li>
                   <li>
-                    <Link href="/luxury" className="text-gray-400 hover:text-white transition-colors">
+                    <Link
+                      href="/luxury"
+                      className="text-gray-400 hover:text-white transition-colors"
+                    >
                       Luxury Collection
                     </Link>
                   </li>
                   <li>
-                    <Link href="/new-arrivals" className="text-gray-400 hover:text-white transition-colors">
+                    <Link
+                      href="/new-arrivals"
+                      className="text-gray-400 hover:text-white transition-colors"
+                    >
                       New Arrivals
                     </Link>
                   </li>
                   <li>
-                    <Link href="/sale" className="text-gray-400 hover:text-white transition-colors">
+                    <Link
+                      href="/sale"
+                      className="text-gray-400 hover:text-white transition-colors"
+                    >
                       Sale Items
                     </Link>
                   </li>
@@ -128,7 +180,9 @@ export default async function Footer() {
           {/* Newsletter */}
           <div>
             <h4 className="text-lg font-semibold mb-6">Newsletter</h4>
-            <p className="text-gray-400 mb-4">Subscribe to get updates on new arrivals and exclusive offers.</p>
+            <p className="text-gray-400 mb-4">
+              Subscribe to get updates on new arrivals and exclusive offers.
+            </p>
             <div className="space-y-4">
               <div className="flex">
                 <Input
@@ -141,7 +195,8 @@ export default async function Footer() {
                 </Button>
               </div>
               <p className="text-xs text-gray-500">
-                By subscribing, you agree to our Privacy Policy and Terms of Service.
+                By subscribing, you agree to our Privacy Policy and Terms of
+                Service.
               </p>
             </div>
           </div>
@@ -154,13 +209,22 @@ export default async function Footer() {
               © {new Date().getFullYear()} Luxe Perfumes. All rights reserved.
             </div>
             <div className="flex space-x-6 text-sm">
-              <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">
+              <Link
+                href="/privacy"
+                className="text-gray-400 hover:text-white transition-colors"
+              >
                 Privacy Policy
               </Link>
-              <Link href="/terms" className="text-gray-400 hover:text-white transition-colors">
+              <Link
+                href="/terms"
+                className="text-gray-400 hover:text-white transition-colors"
+              >
                 Terms of Service
               </Link>
-              <Link href="/cookies" className="text-gray-400 hover:text-white transition-colors">
+              <Link
+                href="/cookies"
+                className="text-gray-400 hover:text-white transition-colors"
+              >
                 Cookie Policy
               </Link>
             </div>
@@ -168,5 +232,5 @@ export default async function Footer() {
         </div>
       </div>
     </footer>
-  )
+  );
 }
