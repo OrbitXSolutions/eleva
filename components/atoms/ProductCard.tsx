@@ -3,20 +3,20 @@
 import type React from "react";
 
 import { Button } from "@/components/ui/button";
-import { Heart, ShoppingBag, Star } from "lucide-react";
+import { Heart, Link, ShoppingBag, Star } from "lucide-react";
 import { useServerTranslation } from "@/hooks/useServerTranslation";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { useCart } from "@/components/providers/CartProvider";
 import { useFavorites } from "@/components/providers/FavoritesProvider";
 import { toast } from "sonner";
 
-import Link from "next/link";
-import { ProductWithUserData } from "@/lib/types/database.types";
+import { useSearchParams } from "next/navigation";
 import { formatPrice } from "@/lib/common/cart";
 import {
   getProductImageUrl,
   getFirstImageUrl,
 } from "@/lib/common/supabase-storage";
+import { ProductWithUserData } from "@/lib/types/database.types";
 import SafeImage from "../custom/safe-image";
 
 interface ProductCardProps {
@@ -32,6 +32,7 @@ export default function ProductCard({
   const { user } = useSupabase();
   const { cart, addItem, updateQuantity, removeItem } = useCart();
   const { addFavorite, removeFavorite } = useFavorites();
+  const searchParams = useSearchParams();
 
   const getProductName = () => {
     return locale === "ar"
@@ -147,8 +148,13 @@ export default function ProductCard({
     callback();
   };
 
+  const currentSearchParams = searchParams.toString();
+  const productLink = `/products/${getProductSlug()}${
+    currentSearchParams ? `?${currentSearchParams}` : ""
+  }`;
+
   return (
-    <Link href={`/products/${getProductSlug()}`} className="block">
+    <Link href={productLink} className="block">
       <div className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 cursor-pointer">
         <div className="relative aspect-square overflow-hidden">
           <SafeImage
@@ -164,7 +170,7 @@ export default function ProductCard({
           />
 
           {showNewBadge && (
-            <div className="absolute top-4 left-4 bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-medium z-10">
+            <div className="absolute top-4 left-4 bg-secondary text-white px-3 py-1 rounded-full text-sm font-medium z-10">
               {t("products.new")}
             </div>
           )}
@@ -259,7 +265,7 @@ export default function ProductCard({
                   className="h-8 w-8 p-0 border-purple-200 hover:bg-purple-100"
                   onClick={(e) => handleButtonClick(e, handleDecreaseQuantity)}
                 >
-                  <span className="text-purple-600 font-bold">-</span>
+                  <span className="text-secondary font-bold">-</span>
                 </Button>
                 <span className="text-sm font-semibold text-purple-700 px-3">
                   {cartQuantity}
@@ -270,12 +276,12 @@ export default function ProductCard({
                   className="h-8 w-8 p-0 border-purple-200 hover:bg-purple-100"
                   onClick={(e) => handleButtonClick(e, handleIncreaseQuantity)}
                 >
-                  <span className="text-purple-600 font-bold">+</span>
+                  <span className="text-secondary font-bold">+</span>
                 </Button>
               </div>
             ) : (
               <Button
-                className="w-full bg-purple-600 hover:bg-purple-700"
+                className="w-full bg-secondary hover:bg-purple-700"
                 size="sm"
                 onClick={(e) => handleButtonClick(e, handleAddToCart)}
               >

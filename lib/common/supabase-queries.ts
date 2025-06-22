@@ -1,11 +1,11 @@
 import { SignUpWithPasswordCredentials } from "@supabase/supabase-js";
 import { createSsrClient } from "../supabase/server";
 import {
-  ProductWithCurrency,
   ProductWithUserData,
+  ProductWithCurrency,
   ReviewWithUser,
 } from "../types/database.types";
-// Simple phone format checker
+
 function isPhone(input: string): boolean {
   return /^(\+?\d{6,15})$/.test(input);
 }
@@ -97,11 +97,11 @@ export async function getFeaturedProducts(
     .from("products")
     .select(
       `
-      *,
-      currency:currencies(*),
-      cart_items!left(quantity, user_id),
-      favorites!left(user_id)
-    `
+    *,
+    currency:currencies(*),
+    cart_items!left(quantity, user_id),
+    favorites!left(user_id)
+  `
     )
     .eq("is_deleted", false)
     .not("quantity", "is", null)
@@ -143,11 +143,11 @@ export async function getNewArrivals(
       .from("products")
       .select(
         `
-        *,
-        currency:currencies(*),
-        cart_items!left(quantity, user_id),
-        favorites!left(user_id)
-      `
+      *,
+      currency:currencies(*),
+      cart_items!left(quantity, user_id),
+      favorites!left(user_id)
+    `
       )
       .eq("is_deleted", false)
       .not("quantity", "is", null)
@@ -172,6 +172,7 @@ export async function getNewArrivals(
     return (data || []).map((product) => ({
       ...product,
       currency: product.currency ?? undefined,
+
       in_cart: product.cart_items && product.cart_items.length > 0,
       cart_quantity: product.cart_items?.[0]?.quantity || null,
       is_favorite: product.favorites && product.favorites.length > 0,
@@ -191,9 +192,9 @@ export async function getProductById(
     .from("products")
     .select(
       `
-      *,
-      currency:currencies(*)
-    `
+    *,
+    currency:currencies(*)
+  `
     )
     .eq("id", id)
     .eq("is_deleted", false)
@@ -217,11 +218,14 @@ export async function getProductBySlug(
     .from("products")
     .select(
       `
-      *,
-      currency:currencies(*),
-      cart_items!left(quantity, user_id),
-      favorites!left(user_id)
-    `
+    *, 
+    meta_title_en, meta_title_ar, 
+    meta_description_en, meta_description_ar, 
+    meta_thumbnail,
+    currency:currencies(*),
+    cart_items!left(quantity, user_id),
+    favorites!left(user_id)
+  `
     )
     .eq("is_deleted", false)
     .or(`slug.eq.${slug},slug_ar.eq.${slug}`);
@@ -243,7 +247,6 @@ export async function getProductBySlug(
   return {
     ...data,
     currency: data.currency ?? undefined,
-
     in_cart: data.cart_items && data.cart_items.length > 0,
     cart_quantity: data.cart_items?.[0]?.quantity || null,
     is_favorite: data.favorites && data.favorites.length > 0,
@@ -260,9 +263,9 @@ export async function getProductReviews(
     .from("reviews")
     .select(
       `
-      *,
-      user:users(*)
-    `
+    *,
+    user:users(*)
+  `
     )
     .eq("product_id", productId)
     .eq("is_deleted", false)
@@ -293,9 +296,9 @@ export async function searchProducts(
     .from("products")
     .select(
       `
-      *,
-      currency:currencies(*)
-    `
+    *,
+    currency:currencies(*)
+  `
     )
     .eq("is_deleted", false)
     .not("quantity", "is", null)

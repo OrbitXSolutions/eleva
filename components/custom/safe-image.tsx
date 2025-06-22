@@ -7,11 +7,11 @@ import Image from "next/image";
 import type { ImageProps } from "next/image";
 import { cn } from "@/lib/utils";
 import {
+  DEFAULT_FALLBACKS,
+  ImageFallbackConfig,
+  isValidImageUrl,
   logImageError,
   getNextFallback,
-  isValidImageUrl,
-  DEFAULT_FALLBACKS,
-  type ImageFallbackConfig,
 } from "@/lib/common/image-error-handler";
 
 export interface SafeImageProps extends Omit<ImageProps, "src" | "onError"> {

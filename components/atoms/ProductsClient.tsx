@@ -36,7 +36,7 @@ export default function ProductsClient({ products }: ProductsClientProps) {
               <Button
                 variant="outline"
                 size="lg"
-                className="border-purple-600 text-purple-600 hover:bg-purple-50"
+                className="border-secondary text-secondary hover:bg-purple-50"
               >
                 {t("products.viewAll")}
               </Button>

@@ -12,6 +12,7 @@ import {
   isRTLLocale,
 } from "@/lib/common/translations";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -133,6 +134,11 @@ export default async function RootLayout({
                 <Footer />
               </Suspense>
             </main>
+            <Toaster
+              richColors
+              position={isRTL ? "top-left" : "top-right"}
+              closeButton
+            />
           </ClientWrapper>
         </ThemeProvider>
       </body>

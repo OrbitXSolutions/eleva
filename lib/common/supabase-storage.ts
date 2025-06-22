@@ -1,7 +1,7 @@
 export class SupabasePaths {
-  static readonly BASE = process.env.NEXT_PUBLIC_SUPABASE_URL
-  static readonly STORAGE = `${SupabasePaths.BASE}/storage/v1/object/public`
-  static readonly IMAGES = `${SupabasePaths.STORAGE}/images`
+  static readonly BASE = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  static readonly STORAGE = `${SupabasePaths.BASE}/storage/v1/object/public`;
+  static readonly IMAGES = `${SupabasePaths.STORAGE}/images`;
 }
 
 export class SupabaseStorageBuckets {
@@ -12,7 +12,7 @@ export class SupabaseStorageBuckets {
       USERS: "users",
       PRODUCTS: "products",
     },
-  }
+  };
 }
 
 /**
@@ -21,20 +21,23 @@ export class SupabaseStorageBuckets {
  * @param fallback - Fallback image URL if imagePath is null/undefined
  * @returns Full Supabase storage URL or fallback
  */
-export function getImageUrl(imagePath: string | null | undefined, fallback?: string): string {
+export function getImageUrl(
+  imagePath: string | null | undefined,
+  fallback?: string
+): string {
   if (!imagePath) {
-    return fallback || "/placeholder.svg?height=400&width=300"
+    return fallback || "/placeholder.svg?height=400&width=300";
   }
 
   // If it's already a full URL, return as is
   if (imagePath.startsWith("http")) {
-    return imagePath
+    return imagePath;
   }
 
   // If it starts with a slash, remove it to avoid double slashes
-  const cleanPath = imagePath.startsWith("/") ? imagePath.slice(1) : imagePath
+  const cleanPath = imagePath.startsWith("/") ? imagePath.slice(1) : imagePath;
 
-  return `${SupabasePaths.IMAGES}/${cleanPath}`
+  return `${SupabasePaths.IMAGES}/${cleanPath}`;
 }
 
 /**
@@ -43,8 +46,14 @@ export function getImageUrl(imagePath: string | null | undefined, fallback?: str
  * @param fallback - Optional fallback image
  * @returns Full product image URL
  */
-export function getProductImageUrl(imagePath: string | null | undefined, fallback?: string): string {
-  return getImageUrl(imagePath, fallback || "/placeholder.svg?height=400&width=300&text=Product")
+export function getProductImageUrl(
+  imagePath: string | null | undefined,
+  fallback?: string
+): string {
+  return getImageUrl(
+    imagePath,
+    fallback || "/placeholder.svg?height=400&width=300&text=Product"
+  );
 }
 
 /**
@@ -53,8 +62,14 @@ export function getProductImageUrl(imagePath: string | null | undefined, fallbac
  * @param fallback - Optional fallback avatar
  * @returns Full avatar URL
  */
-export function getUserAvatarUrl(imagePath: string | null | undefined, fallback?: string): string {
-  return getImageUrl(imagePath, fallback || "/placeholder.svg?height=60&width=60&text=User")
+export function getUserAvatarUrl(
+  imagePath: string | null | undefined,
+  fallback?: string
+): string {
+  return getImageUrl(
+    imagePath,
+    fallback || "/placeholder.svg?height=60&width=60&text=User"
+  );
 }
 
 /**
@@ -63,8 +78,14 @@ export function getUserAvatarUrl(imagePath: string | null | undefined, fallback?
  * @param fallback - Optional fallback image
  * @returns Full category image URL
  */
-export function getCategoryImageUrl(imagePath: string | null | undefined, fallback?: string): string {
-  return getImageUrl(imagePath, fallback || "/placeholder.svg?height=200&width=200&text=Category")
+export function getCategoryImageUrl(
+  imagePath: string | null | undefined,
+  fallback?: string
+): string {
+  return getImageUrl(
+    imagePath,
+    fallback || "/placeholder.svg?height=200&width=200&text=Category"
+  );
 }
 
 /**
@@ -73,10 +94,13 @@ export function getCategoryImageUrl(imagePath: string | null | undefined, fallba
  * @param fallback - Fallback image URL
  * @returns First available image URL or fallback
  */
-export function getFirstImageUrl(images: string[] | null | undefined, fallback?: string): string {
+export function getFirstImageUrl(
+  images: string[] | null | undefined,
+  fallback?: string
+): string {
   if (!images || images.length === 0) {
-    return fallback || "/placeholder.svg?height=400&width=300"
+    return fallback || "/placeholder.svg?height=400&width=300";
   }
 
-  return getImageUrl(images[0], fallback)
+  return getImageUrl(images[0], fallback);
 }

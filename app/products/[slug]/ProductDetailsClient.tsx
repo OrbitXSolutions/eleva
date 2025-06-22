@@ -1,153 +1,128 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Heart,
-  ShoppingBag,
-  Star,
-  Minus,
-  Plus,
-  Share2,
-  ArrowLeft,
-} from "lucide-react";
-import { useServerTranslation } from "@/hooks/useServerTranslation";
-import { useSupabase } from "@/components/providers/SupabaseProvider";
-import { useCart } from "@/components/providers/CartProvider";
-import { useFavorites } from "@/components/providers/FavoritesProvider";
-import { toast } from "sonner";
-
-import Link from "next/link";
-import SafeImage from "@/components/custom/safe-image";
-import { formatPrice } from "@/lib/common/cart";
-import { getProductImageUrl } from "@/lib/common/supabase-storage";
-import {
-  ProductWithUserData,
-  ReviewWithUser,
-} from "@/lib/types/database.types";
+import { useState, useEffect, useMemo } from "react"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Heart, ShoppingBag, Star, Minus, Plus, Share2, ArrowLeft } from "lucide-react"
+import { useServerTranslation } from "@/hooks/useServerTranslation"
+import { useSupabase } from "@/components/providers/SupabaseProvider"
+import { useCart } from "@/components/providers/CartProvider"
+import { useFavorites } from "@/components/providers/FavoritesProvider"
+import { toast } from "sonner"
+import { formatPrice } from "@/lib/cart"
+import { getProductImageUrl } from "@/lib/supabase-storage"
+import SafeImage from "@/components/ui/safe-image"
+import type { ProductWithUserData, ReviewWithUser } from "@/types/database"
+import Link from "next/link"
 
 interface ProductDetailsClientProps {
-  product: ProductWithUserData;
-  reviews: ReviewWithUser[];
+  product: ProductWithUserData
+  reviews: ReviewWithUser[]
 }
 
-export default function ProductDetailsClient({
-  product,
-  reviews,
-}: ProductDetailsClientProps) {
-  const { t, locale, isRTL } = useServerTranslation();
-  const { user } = useSupabase();
-  const { cart, addItem, updateQuantity, removeItem } = useCart();
-  const { addFavorite, removeFavorite } = useFavorites();
+export default function ProductDetailsClient({ product, reviews }: ProductDetailsClientProps) {
+  const { t, locale, isRTL } = useServerTranslation()
+  const { user } = useSupabase()
+  const { cart, addItem, updateQuantity, removeItem } = useCart()
+  const { addFavorite, removeFavorite } = useFavorites()
 
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [quantity, setQuantity] = useState(1);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const [quantity, setQuantity] = useState(1)
 
-  const [variants, setVariants] = useState<ProductWithUserData[]>([]);
-  const [selectedVariant, setSelectedVariant] =
-    useState<ProductWithUserData>(product);
-  const [loadingVariants, setLoadingVariants] = useState(false);
+  const [variants, setVariants] = useState<ProductWithUserData[]>([])
+  const [selectedVariant, setSelectedVariant] = useState<ProductWithUserData>(product)
+  const [loadingVariants, setLoadingVariants] = useState(false)
 
   // Fetch variants when component mounts
   useEffect(() => {
     const fetchVariants = async () => {
-      if (!product.variant_group) return;
+      if (!product.variant_group) return
 
-      setLoadingVariants(true);
+      setLoadingVariants(true)
       try {
-        const response = await fetch(
-          `/api/products/variants?group=${product.variant_group}`
-        );
-        const data = await response.json();
+        const response = await fetch(`/api/products/variants?group=${product.variant_group}`)
+        const data = await response.json()
         if (data.variants) {
-          setVariants(data.variants);
+          setVariants(data.variants)
           // Find current product in variants or use the first one
-          const currentVariant =
-            data.variants.find(
-              (v: ProductWithUserData) => v.id === product.id
-            ) || product;
-          setSelectedVariant(currentVariant);
+          const currentVariant = data.variants.find((v: ProductWithUserData) => v.id === product.id) || product
+          setSelectedVariant(currentVariant)
         }
       } catch (error) {
-        console.error("Error fetching variants:", error);
+        console.error("Error fetching variants:", error)
       } finally {
-        setLoadingVariants(false);
+        setLoadingVariants(false)
       }
-    };
+    }
 
-    fetchVariants();
-  }, [product.variant_group, product.id, locale, product]);
+    fetchVariants()
+  }, [product.variant_group, product.id, locale, product])
 
   const getProductName = () => {
-    return locale === "ar"
-      ? selectedVariant.name_ar || selectedVariant.name_en
-      : selectedVariant.name_en;
-  };
+    return locale === "ar" ? selectedVariant.name_ar || selectedVariant.name_en : selectedVariant.name_en
+  }
 
   const getProductDescription = () => {
     return locale === "ar"
       ? selectedVariant.description_ar || selectedVariant.description_en
-      : selectedVariant.description_en;
-  };
+      : selectedVariant.description_en
+  }
 
-  const isInStock = selectedVariant.quantity && selectedVariant.quantity > 0;
+  const isInStock = selectedVariant.quantity && selectedVariant.quantity > 0
 
   // Use server-side data if available, fallback to client-side for real-time updates
-  const serverIsInCart = product.in_cart || false;
-  const serverCartQuantity = product.cart_quantity || 0;
-  const serverIsFavorite = product.is_favorite || false;
+  const serverIsInCart = product.in_cart || false
+  const serverCartQuantity = product.cart_quantity || 0
+  const serverIsFavorite = product.is_favorite || false
 
   // Check client-side cart for real-time updates
-  const clientCartItem = cart.items.find(
-    (item) => item.product.id === product.id
-  );
-  const clientIsInCart = !!clientCartItem;
-  const clientCartQuantity = clientCartItem?.quantity || 0;
+  const clientCartItem = cart.items.find((item) => item.product.id === product.id)
+  const clientIsInCart = !!clientCartItem
+  const clientCartQuantity = clientCartItem?.quantity || 0
 
   // Use client-side data if it exists (for real-time updates), otherwise use server-side
-  const isInCart = clientIsInCart || serverIsInCart;
-  const cartQuantity = clientCartQuantity || serverCartQuantity;
-  const isFavorited = serverIsFavorite;
+  const isInCart = clientIsInCart || serverIsInCart
+  const cartQuantity = clientCartQuantity || serverCartQuantity
+  const isFavorited = serverIsFavorite
 
   // Get all product images
-  const allImages = [] as any[];
+  const allImages = []
 
   // First add other images from the images array
   if (selectedVariant.images && selectedVariant.images.length > 0) {
     selectedVariant.images.forEach((img) => {
-      const imageUrl = getProductImageUrl(img);
-      allImages.push(imageUrl);
-    });
+      const imageUrl = getProductImageUrl(img)
+      allImages.push(imageUrl)
+    })
   }
 
   // Then add primary image at the end if it exists and isn't already included
   if (selectedVariant.primary_image) {
-    const primaryImageUrl = getProductImageUrl(selectedVariant.primary_image);
+    const primaryImageUrl = getProductImageUrl(selectedVariant.primary_image)
     if (!allImages.includes(primaryImageUrl)) {
-      allImages.push(primaryImageUrl);
+      allImages.push(primaryImageUrl)
     }
   }
 
   // Fallback to placeholder if no images
   if (allImages.length === 0) {
-    allImages.push("/placeholder.svg?height=600&width=600&text=Product");
+    allImages.push("/placeholder.svg?height=600&width=600&text=Product")
   }
 
   const handleAddToCart = () => {
-    if (!isInStock) return;
+    if (!isInStock) return
 
-    addItem(selectedVariant, quantity);
+    addItem(selectedVariant, quantity)
     toast.success(t("products.addedToCart"), {
       description: `${quantity}x ${getProductName()}`,
       action: {
         label: t("cart.viewCart"),
         onClick: () => {
-          window.location.href = "/cart";
+          window.location.href = "/cart"
         },
       },
-    });
-  };
+    })
+  }
 
   const handleToggleFavorite = () => {
     if (!user) {
@@ -156,133 +131,112 @@ export default function ProductDetailsClient({
         action: {
           label: t("auth.login"),
           onClick: () => {
-            window.location.href = "/auth/login";
+            window.location.href = "/auth/login"
           },
         },
-      });
-      return;
+      })
+      return
     }
 
     if (isFavorited) {
-      removeFavorite(product.id);
+      removeFavorite(product.id)
       toast.success(t("favorites.removed"), {
         description: getProductName(),
-      });
+      })
     } else {
-      addFavorite(product.id);
+      addFavorite(product.id)
       toast.success(t("favorites.added"), {
         description: getProductName(),
-      });
+      })
     }
-  };
+  }
 
   const handleShare = async () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: getProductName()!,
-          text: getProductDescription()!,
+          title: getProductName(),
+          text: getProductDescription(),
           url: window.location.href,
-        });
+        })
       } catch (error) {
-        console.log("Error sharing:", error);
+        console.log("Error sharing:", error)
       }
     } else {
       // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
-      toast.success("Link copied to clipboard");
+      navigator.clipboard.writeText(window.location.href)
+      toast.success("Link copied to clipboard")
     }
-  };
+  }
 
   // Calculate rating from total_rates and rates_count
-  const averageRating = product.total_rates || 0;
+  const averageRating = product.total_rates || 0
 
   // Helper function to get unique attribute values
-  const getVariantOptions = () => {
-    if (!variants.length) return { colors: [], sizes: [], others: [] };
+  const { colors, sizes, others } = useMemo(() => {
+    if (!variants.length) return { colors: [], sizes: [], others: [] }
 
-    const colors: Array<{
-      value: string;
-      hex?: string;
-      product: ProductWithUserData;
-    }> = [];
-    const sizes: Array<{ value: string; product: ProductWithUserData }> = [];
-    const others: Array<{
-      key: string;
-      value: string;
-      product: ProductWithUserData;
-    }> = [];
+    const uniqueColors: Array<{ value: any; hex?: string; product: ProductWithUserData }> = []
+    const uniqueSizes: Array<{ value: string; product: ProductWithUserData }> = []
+    const uniqueOthers: Array<{ key: string; value: string; product: ProductWithUserData }> = []
+
+    const colorValues = new Set<string>()
+    const sizeValues = new Set<string>()
 
     variants.forEach((variant) => {
       if (variant.attributes && typeof variant.attributes === "object") {
-        const attrs = variant.attributes as Record<string, any>;
+        const attrs = variant.attributes as Record<string, any>
 
         Object.entries(attrs).forEach(([key, value]) => {
+          const valueStr = String(typeof value === "object" && value?.name ? value.name : value)
+
           if (key.toLowerCase() === "color") {
-            const existing = colors.find((c) => {
-              if (typeof value === "object" && value?.name) {
-                return (c.value as any).name === value.name;
-              }
-              return c.value === value;
-            });
-            if (!existing) {
-              colors.push({
-                value: value,
-                hex:
-                  typeof value === "object" && value?.hex
-                    ? value.hex
-                    : undefined,
+            if (!colorValues.has(valueStr)) {
+              uniqueColors.push({
+                value: value, // Store original value for selection
+                hex: typeof value === "object" && value?.hex ? value.hex : undefined,
                 product: variant,
-              });
+              })
+              colorValues.add(valueStr)
             }
           } else if (
             key.toLowerCase().includes("size") ||
             key.toLowerCase().includes("ml") ||
             key.toLowerCase().includes("oz")
           ) {
-            const existing = sizes.find((s) => s.value === value);
-            if (!existing) {
-              sizes.push({ value: value, product: variant });
+            if (!sizeValues.has(valueStr)) {
+              uniqueSizes.push({ value: valueStr, product: variant })
+              sizeValues.add(valueStr)
             }
           } else {
-            others.push({ key, value: value, product: variant });
+            // For 'others', uniqueness might be more complex (key-value pair)
+            // For simplicity, this example doesn't ensure deep uniqueness for 'others' here
+            // but rather lists all non-color/size attributes.
+            // If specific unique 'other' attributes are needed, refine this.
+            uniqueOthers.push({ key, value: valueStr, product: variant })
           }
-        });
+        })
       }
-    });
-
-    return { colors, sizes, others };
-  };
-
-  const { colors, sizes, others } = getVariantOptions();
+    })
+    return { colors: uniqueColors, sizes: uniqueSizes, others: uniqueOthers }
+  }, [variants])
 
   // Handle variant selection
   const handleVariantSelect = (newVariant: ProductWithUserData) => {
-    setSelectedVariant(newVariant);
+    setSelectedVariant(newVariant)
     // Update URL without page reload
-    const newSlug =
-      locale === "ar" && newVariant.slug_ar
-        ? newVariant.slug_ar
-        : newVariant.slug;
+    const newSlug = locale === "ar" && newVariant.slug_ar ? newVariant.slug_ar : newVariant.slug
     if (newSlug) {
-      window.history.replaceState(
-        {},
-        "",
-        `/products/${newSlug}${window.location.search}`
-      );
+      window.history.replaceState({}, "", `/products/${newSlug}${window.location.search}`)
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Breadcrumb */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">
-          <div
-            className={`flex items-center gap-2 text-sm text-gray-600 ${
-              isRTL ? "flex-row-reverse" : ""
-            }`}
-          >
+          <div className={`flex items-center gap-2 text-sm text-gray-600 ${isRTL ? "flex-row-reverse" : ""}`}>
             <Link href="/" className="hover:text-gray-900">
               {t("header.nav.home")}
             </Link>
@@ -303,17 +257,11 @@ export default function ProductDetailsClient({
           className={`mb-6 ${isRTL ? "flex-row-reverse" : ""}`}
           onClick={() => window.history.back()}
         >
-          <ArrowLeft
-            className={`h-4 w-4 ${isRTL ? "ml-2 rotate-180" : "mr-2"}`}
-          />
+          <ArrowLeft className={`h-4 w-4 ${isRTL ? "ml-2 rotate-180" : "mr-2"}`} />
           {t("common.back") || "Back"}
         </Button>
 
-        <div
-          className={`grid lg:grid-cols-2 gap-12 ${
-            isRTL ? "lg:grid-cols-2" : ""
-          }`}
-        >
+        <div className={`grid lg:grid-cols-2 gap-12 ${isRTL ? "lg:grid-cols-2" : ""}`}>
           {/* Product Images */}
           <div className="space-y-4">
             {/* Main Image */}
@@ -338,9 +286,7 @@ export default function ProductDetailsClient({
                     key={index}
                     onClick={() => setSelectedImageIndex(index)}
                     className={`w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
-                      selectedImageIndex === index
-                        ? "border-purple-600"
-                        : "border-gray-200"
+                      selectedImageIndex === index ? "border-purple-600" : "border-gray-200"
                     }`}
                   >
                     <SafeImage
@@ -361,102 +307,62 @@ export default function ProductDetailsClient({
           <div className="space-y-6">
             {/* Title and Rating */}
             <div>
-              <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-                {getProductName()}
-              </h1>
+              <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">{getProductName()}</h1>
 
               {averageRating > 0 && (
-                <div
-                  className={`flex items-center gap-2 mb-4 ${
-                    isRTL ? "flex-row-reverse" : ""
-                  }`}
-                >
+                <div className={`flex items-center gap-2 mb-4 ${isRTL ? "flex-row-reverse" : ""}`}>
                   <div className="flex items-center">
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
                         className={`h-5 w-5 ${
-                          i < Math.floor(averageRating)
-                            ? "text-yellow-400 fill-current"
-                            : "text-gray-300"
+                          i < Math.floor(averageRating) ? "text-yellow-400 fill-current" : "text-gray-300"
                         }`}
                       />
                     ))}
                   </div>
                   <span className="text-sm text-gray-600">
-                    {averageRating.toFixed(1)} ({product.rates_count || 0}{" "}
-                    {t("reviews.reviews") || "reviews"})
+                    {averageRating.toFixed(1)} ({product.rates_count || 0} {t("reviews.reviews") || "reviews"})
                   </span>
                 </div>
               )}
 
-              {selectedVariant.sku && (
-                <p className="text-sm text-gray-500 mb-4">
-                  SKU: {selectedVariant.sku}
-                </p>
-              )}
+              {selectedVariant.sku && <p className="text-sm text-gray-500 mb-4">SKU: {selectedVariant.sku}</p>}
             </div>
 
             {/* Price */}
-            <div
-              className={`flex items-center gap-4 ${
-                isRTL ? "flex-row-reverse" : ""
-              }`}
-            >
+            <div className={`flex items-center gap-4 ${isRTL ? "flex-row-reverse" : ""}`}>
               <span className="text-3xl font-bold text-gray-900">
-                {formatPrice(
-                  selectedVariant.price,
-                  selectedVariant.currency,
-                  locale
-                )}
+                {formatPrice(selectedVariant.price, selectedVariant.currency, locale)}
               </span>
-              {selectedVariant.old_price &&
-                selectedVariant.old_price > (selectedVariant.price || 0) && (
-                  <>
-                    <span className="text-xl text-gray-500 line-through">
-                      {formatPrice(
-                        selectedVariant.old_price,
-                        selectedVariant.currency,
-                        locale
-                      )}
-                    </span>
-                    <Badge variant="destructive" className="text-sm">
-                      {Math.round(
-                        ((selectedVariant.old_price -
-                          (selectedVariant.price || 0)) /
-                          selectedVariant.old_price) *
-                          100
-                      )}
-                      % OFF
-                    </Badge>
-                  </>
-                )}
+              {selectedVariant.old_price && selectedVariant.old_price > (selectedVariant.price || 0) && (
+                <>
+                  <span className="text-xl text-gray-500 line-through">
+                    {formatPrice(selectedVariant.old_price, selectedVariant.currency, locale)}
+                  </span>
+                  <Badge variant="destructive" className="text-sm">
+                    {Math.round(
+                      ((selectedVariant.old_price - (selectedVariant.price || 0)) / selectedVariant.old_price) * 100,
+                    )}
+                    % OFF
+                  </Badge>
+                </>
+              )}
             </div>
 
             {/* Stock Status */}
             <div>
               {isInStock ? (
-                <div
-                  className={`flex items-center gap-2 ${
-                    isRTL ? "flex-row-reverse" : ""
-                  }`}
-                >
+                <div className={`flex items-center gap-2 ${isRTL ? "flex-row-reverse" : ""}`}>
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                   <span className="text-green-600 font-medium">
-                    {t("products.inStock")} ({selectedVariant.quantity}{" "}
-                    {t("products.available") || "available"})
+                    {t("products.inStock")} ({selectedVariant.quantity} {t("products.available") || "available"})
                   </span>
                 </div>
               ) : (
-                <div
-                  className={`flex items-center gap-2 ${
-                    isRTL ? "flex-row-reverse" : ""
-                  }`}
-                >
+                <div className={`flex items-center gap-2 ${isRTL ? "flex-row-reverse" : ""}`}>
                   <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <span className="text-red-600 font-medium">
-                    {t("products.outOfStock")}
-                  </span>
+                  <span className="text-red-600 font-medium">{t("products.outOfStock")}</span>
                 </div>
               )}
             </div>
@@ -467,9 +373,7 @@ export default function ProductDetailsClient({
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
                   {t("products.description") || "Description"}
                 </h3>
-                <p className="text-gray-600 leading-relaxed">
-                  {getProductDescription()}
-                </p>
+                <p className="text-gray-600 leading-relaxed">{getProductDescription()}</p>
               </div>
             )}
 
@@ -480,11 +384,7 @@ export default function ProductDetailsClient({
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     {t("products.quantity") || "Quantity"}
                   </label>
-                  <div
-                    className={`flex items-center gap-3 ${
-                      isRTL ? "flex-row-reverse" : ""
-                    }`}
-                  >
+                  <div className={`flex items-center gap-3 ${isRTL ? "flex-row-reverse" : ""}`}>
                     <Button
                       variant="outline"
                       size="sm"
@@ -493,17 +393,11 @@ export default function ProductDetailsClient({
                     >
                       <Minus className="h-4 w-4" />
                     </Button>
-                    <span className="text-lg font-semibold min-w-[3rem] text-center">
-                      {quantity}
-                    </span>
+                    <span className="text-lg font-semibold min-w-[3rem] text-center">{quantity}</span>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() =>
-                        setQuantity(
-                          Math.min(selectedVariant.quantity || 1, quantity + 1)
-                        )
-                      }
+                      onClick={() => setQuantity(Math.min(selectedVariant.quantity || 1, quantity + 1))}
                       disabled={quantity >= (selectedVariant.quantity || 1)}
                     >
                       <Plus className="h-4 w-4" />
@@ -511,17 +405,9 @@ export default function ProductDetailsClient({
                   </div>
                 </div>
 
-                <div
-                  className={`flex gap-4 ${isRTL ? "flex-row-reverse" : ""}`}
-                >
-                  <Button
-                    size="lg"
-                    className="flex-1 bg-purple-600 hover:bg-purple-700"
-                    onClick={handleAddToCart}
-                  >
-                    <ShoppingBag
-                      className={`h-5 w-5 ${isRTL ? "ml-2" : "mr-2"}`}
-                    />
+                <div className={`flex gap-4 ${isRTL ? "flex-row-reverse" : ""}`}>
+                  <Button size="lg" className="flex-1 bg-purple-600 hover:bg-purple-700" onClick={handleAddToCart}>
+                    <ShoppingBag className={`h-5 w-5 ${isRTL ? "ml-2" : "mr-2"}`} />
                     {t("products.addToCart")}
                   </Button>
                   <Button
@@ -530,9 +416,7 @@ export default function ProductDetailsClient({
                     onClick={handleToggleFavorite}
                     className={isFavorited ? "text-red-600 border-red-600" : ""}
                   >
-                    <Heart
-                      className={`h-5 w-5 ${isFavorited ? "fill-current" : ""}`}
-                    />
+                    <Heart className={`h-5 w-5 ${isFavorited ? "fill-current" : ""}`} />
                   </Button>
                   <Button variant="outline" size="lg" onClick={handleShare}>
                     <Share2 className="h-5 w-5" />
@@ -544,56 +428,36 @@ export default function ProductDetailsClient({
             {/* Variant Selection */}
             {variants.length > 1 && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                  Available Options
-                </h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Available Options</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {variants.map((variant, index) => {
-                    const isSelected = selectedVariant.id === variant.id;
-                    const variantName =
-                      locale === "ar"
-                        ? variant.name_ar || variant.name_en
-                        : variant.name_en;
+                    const isSelected = selectedVariant.id === variant.id
+                    const variantName = locale === "ar" ? variant.name_ar || variant.name_en : variant.name_en
 
                     // Extract key attributes for display
-                    const displayAttributes = [] as any[];
-                    if (
-                      variant.attributes &&
-                      typeof variant.attributes === "object"
-                    ) {
-                      const attrs = variant.attributes as Record<string, any>;
+                    const displayAttributes = []
+                    if (variant.attributes && typeof variant.attributes === "object") {
+                      const attrs = variant.attributes as Record<string, any>
                       Object.entries(attrs).forEach(([key, value]) => {
                         if (key.toLowerCase() === "color") {
                           if (typeof value === "object" && value?.name) {
-                            displayAttributes.push({
-                              key: "Color",
-                              value: value.name,
-                              hex: value.hex,
-                            });
+                            displayAttributes.push({ key: "Color", value: value.name, hex: value.hex })
                           } else {
-                            displayAttributes.push({
-                              key: "Color",
-                              value: String(value),
-                            });
+                            displayAttributes.push({ key: "Color", value: String(value) })
                           }
                         } else if (
                           key.toLowerCase().includes("size") ||
                           key.toLowerCase().includes("ml") ||
                           key.toLowerCase().includes("oz")
                         ) {
-                          displayAttributes.push({
-                            key: "Size",
-                            value: String(value),
-                          });
+                          displayAttributes.push({ key: "Size", value: String(value) })
                         } else {
                           displayAttributes.push({
-                            key: key
-                              .replace(/([A-Z])/g, " $1")
-                              .replace(/^./, (str) => str.toUpperCase()),
+                            key: key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase()),
                             value: String(value),
-                          });
+                          })
                         }
-                      });
+                      })
                     }
 
                     return (
@@ -608,13 +472,8 @@ export default function ProductDetailsClient({
                       >
                         <div className="space-y-2">
                           {displayAttributes.map((attr, attrIndex) => (
-                            <div
-                              key={attrIndex}
-                              className="flex items-center justify-between"
-                            >
-                              <span className="text-xs font-medium text-gray-600">
-                                {attr.key}
-                              </span>
+                            <div key={attrIndex} className="flex items-center justify-between">
+                              <span className="text-xs font-medium text-gray-600">{attr.key}</span>
                               <div className="flex items-center gap-1">
                                 {attr.key === "Color" && attr.hex && (
                                   <div
@@ -623,11 +482,7 @@ export default function ProductDetailsClient({
                                   />
                                 )}
                                 <span
-                                  className={`text-xs font-semibold ${
-                                    isSelected
-                                      ? "text-purple-700"
-                                      : "text-gray-900"
-                                  }`}
+                                  className={`text-xs font-semibold ${isSelected ? "text-purple-700" : "text-gray-900"}`}
                                 >
                                   {attr.value}
                                 </span>
@@ -636,88 +491,66 @@ export default function ProductDetailsClient({
                           ))}
                           {variant.price && (
                             <div className="pt-1 border-t border-gray-100">
-                              <span
-                                className={`text-sm font-bold ${
-                                  isSelected
-                                    ? "text-purple-700"
-                                    : "text-gray-900"
-                                }`}
-                              >
-                                {formatPrice(
-                                  variant.price,
-                                  variant.currency,
-                                  locale
-                                )}
+                              <span className={`text-sm font-bold ${isSelected ? "text-purple-700" : "text-gray-900"}`}>
+                                {formatPrice(variant.price, variant.currency, locale)}
                               </span>
                             </div>
                           )}
                         </div>
                       </button>
-                    );
+                    )
                   })}
                 </div>
               </div>
             )}
 
             {/* Product Attributes */}
-            {selectedVariant.attributes &&
-              Object.keys(selectedVariant.attributes).length > 0 && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    {t("products.details") || "Product Details"}
-                  </h3>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="grid gap-3">
-                      {Object.entries(
-                        selectedVariant.attributes as Record<string, any>
-                      ).map(([key, value]) => (
-                        <div
-                          key={key}
-                          className={`flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0 ${
-                            isRTL ? "flex-row-reverse" : ""
-                          }`}
-                        >
-                          <span className="font-medium text-gray-700 capitalize">
-                            {key
-                              .replace(/([A-Z])/g, " $1")
-                              .replace(/^./, (str) => str.toUpperCase())}
-                          </span>
-                          <span className="text-gray-900 flex items-center gap-2">
-                            {key.toLowerCase() === "color" ? (
-                              typeof value === "object" && value?.hex ? (
-                                <>
-                                  <div
-                                    className="w-4 h-4 rounded-full border border-gray-300"
-                                    style={{ backgroundColor: value.hex }}
-                                  />
-                                  {value.name || value.hex}
-                                </>
-                              ) : typeof value === "string" &&
-                                value.startsWith("#") ? (
-                                <>
-                                  <div
-                                    className="w-4 h-4 rounded-full border border-gray-300"
-                                    style={{ backgroundColor: value }}
-                                  />
-                                  {value}
-                                </>
-                              ) : (
-                                String(
-                                  typeof value === "object" && value?.name
-                                    ? value.name
-                                    : value
-                                )
-                              )
+            {selectedVariant.attributes && Object.keys(selectedVariant.attributes).length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                  {t("products.details") || "Product Details"}
+                </h3>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="grid gap-3">
+                    {Object.entries(selectedVariant.attributes as Record<string, any>).map(([key, value]) => (
+                      <div
+                        key={key}
+                        className={`flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0 ${isRTL ? "flex-row-reverse" : ""}`}
+                      >
+                        <span className="font-medium text-gray-700 capitalize">
+                          {key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}
+                        </span>
+                        <span className="text-gray-900 flex items-center gap-2">
+                          {key.toLowerCase() === "color" ? (
+                            typeof value === "object" && value?.hex ? (
+                              <>
+                                <div
+                                  className="w-4 h-4 rounded-full border border-gray-300"
+                                  style={{ backgroundColor: value.hex }}
+                                />
+                                {value.name || value.hex}
+                              </>
+                            ) : typeof value === "string" && value.startsWith("#") ? (
+                              <>
+                                <div
+                                  className="w-4 h-4 rounded-full border border-gray-300"
+                                  style={{ backgroundColor: value }}
+                                />
+                                {value}
+                              </>
                             ) : (
-                              String(value)
-                            )}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                              String(typeof value === "object" && value?.name ? value.name : value)
+                            )
+                          ) : (
+                            String(value)
+                          )}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -730,21 +563,12 @@ export default function ProductDetailsClient({
           {/* Rating Summary Section */}
           {reviews.length > 0 && (
             <div className="bg-white rounded-lg p-6 shadow-sm mb-8">
-              <div
-                className={`grid md:grid-cols-2 gap-8 ${
-                  isRTL ? "md:grid-cols-2" : ""
-                }`}
-              >
+              <div className={`grid md:grid-cols-2 gap-8 ${isRTL ? "md:grid-cols-2" : ""}`}>
                 {/* Overall Rating */}
                 <div className="text-center">
                   <div className="mb-6">
                     <div className="text-6xl font-bold text-purple-600 mb-2">
-                      {(
-                        reviews.reduce(
-                          (sum, review) => sum + (review.rating || 0),
-                          0
-                        ) / reviews.length
-                      ).toFixed(1)}
+                      {(reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / reviews.length).toFixed(1)}
                     </div>
                     <div className="flex items-center justify-center mb-2">
                       {[...Array(5)].map((_, i) => (
@@ -752,12 +576,7 @@ export default function ProductDetailsClient({
                           key={i}
                           className={`h-7 w-7 ${
                             i <
-                            Math.floor(
-                              reviews.reduce(
-                                (sum, review) => sum + (review.rating || 0),
-                                0
-                              ) / reviews.length
-                            )
+                            Math.floor(reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / reviews.length)
                               ? "text-yellow-400 fill-current"
                               : "text-gray-300"
                           }`}
@@ -765,17 +584,11 @@ export default function ProductDetailsClient({
                       ))}
                     </div>
                     <p className="text-lg font-medium text-gray-700 mb-1">
-                      {(
-                        reviews.reduce(
-                          (sum, review) => sum + (review.rating || 0),
-                          0
-                        ) / reviews.length
-                      ).toFixed(1)}{" "}
-                      out of 5 stars
+                      {(reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / reviews.length).toFixed(1)} out
+                      of 5 stars
                     </p>
                     <p className="text-sm text-gray-500">
-                      Based on {reviews.length} customer{" "}
-                      {reviews.length === 1 ? "review" : "reviews"}
+                      Based on {reviews.length} customer {reviews.length === 1 ? "review" : "reviews"}
                     </p>
                   </div>
 
@@ -783,30 +596,18 @@ export default function ProductDetailsClient({
                   <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-100">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-green-600">
-                        {Math.round(
-                          (reviews.filter((r) => (r.rating || 0) >= 4).length /
-                            reviews.length) *
-                            100
-                        )}
-                        %
+                        {Math.round((reviews.filter((r) => (r.rating || 0) >= 4).length / reviews.length) * 100)}%
                       </div>
                       <div className="text-xs text-gray-500">Recommend</div>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-purple-600">
-                        {Math.round(
-                          (reviews.filter((r) => (r.rating || 0) === 5).length /
-                            reviews.length) *
-                            100
-                        )}
-                        %
+                        {Math.round((reviews.filter((r) => (r.rating || 0) === 5).length / reviews.length) * 100)}%
                       </div>
                       <div className="text-xs text-gray-500">5 Stars</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">
-                        {reviews.length}
-                      </div>
+                      <div className="text-2xl font-bold text-blue-600">{reviews.length}</div>
                       <div className="text-xs text-gray-500">Total Reviews</div>
                     </div>
                   </div>
@@ -815,23 +616,13 @@ export default function ProductDetailsClient({
                 {/* Rating Distribution */}
                 <div className="space-y-2">
                   {[5, 4, 3, 2, 1].map((rating) => {
-                    const count = reviews.filter(
-                      (review) => Math.floor(review.rating || 0) === rating
-                    ).length;
-                    const percentage =
-                      reviews.length > 0 ? (count / reviews.length) * 100 : 0;
+                    const count = reviews.filter((review) => Math.floor(review.rating || 0) === rating).length
+                    const percentage = reviews.length > 0 ? (count / reviews.length) * 100 : 0
 
                     return (
-                      <div
-                        key={rating}
-                        className={`flex items-center gap-3 ${
-                          isRTL ? "flex-row-reverse" : ""
-                        }`}
-                      >
+                      <div key={rating} className={`flex items-center gap-3 ${isRTL ? "flex-row-reverse" : ""}`}>
                         <div className="flex items-center gap-1 min-w-[60px]">
-                          <span className="text-sm font-medium text-gray-700">
-                            {rating}
-                          </span>
+                          <span className="text-sm font-medium text-gray-700">{rating}</span>
                           <Star className="h-4 w-4 text-yellow-400 fill-current" />
                         </div>
                         <div className="flex-1 bg-gray-200 rounded-full h-2">
@@ -844,7 +635,7 @@ export default function ProductDetailsClient({
                           {count} ({percentage.toFixed(0)}%)
                         </span>
                       </div>
-                    );
+                    )
                   })}
                 </div>
               </div>
@@ -853,16 +644,11 @@ export default function ProductDetailsClient({
 
           {/* Add Review Form */}
           <div className="bg-white rounded-lg p-6 shadow-sm mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">
-              Write a Review
-            </h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Write a Review</h3>
             <form className="space-y-4">
               {!user && (
                 <div>
-                  <label
-                    htmlFor="reviewerName"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
+                  <label htmlFor="reviewerName" className="block text-sm font-medium text-gray-700 mb-2">
                     Full Name *
                   </label>
                   <input
@@ -877,9 +663,7 @@ export default function ProductDetailsClient({
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Rating *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Rating *</label>
                 <div className="flex items-center gap-2">
                   {[1, 2, 3, 4, 5].map((rating) => (
                     <button
@@ -887,37 +671,27 @@ export default function ProductDetailsClient({
                       type="button"
                       className="p-1 hover:scale-110 transition-transform"
                       onClick={(e) => {
-                        e.preventDefault();
+                        e.preventDefault()
                         // Handle rating selection
-                        const stars =
-                          e.currentTarget.parentElement?.querySelectorAll(
-                            "button"
-                          );
+                        const stars = e.currentTarget.parentElement?.querySelectorAll("button")
                         stars?.forEach((star, index) => {
-                          const starIcon = star.querySelector("svg");
+                          const starIcon = star.querySelector("svg")
                           if (starIcon) {
                             if (index < rating) {
-                              starIcon.classList.add(
-                                "text-yellow-400",
-                                "fill-current"
-                              );
-                              starIcon.classList.remove("text-gray-300");
+                              starIcon.classList.add("text-yellow-400", "fill-current")
+                              starIcon.classList.remove("text-gray-300")
                             } else {
-                              starIcon.classList.remove(
-                                "text-yellow-400",
-                                "fill-current"
-                              );
-                              starIcon.classList.add("text-gray-300");
+                              starIcon.classList.remove("text-yellow-400", "fill-current")
+                              starIcon.classList.add("text-gray-300")
                             }
                           }
-                        });
+                        })
                         // Set hidden input value
-                        const hiddenInput =
-                          e.currentTarget.parentElement?.parentElement?.querySelector(
-                            'input[name="rating"]'
-                          ) as HTMLInputElement;
+                        const hiddenInput = e.currentTarget.parentElement?.parentElement?.querySelector(
+                          'input[name="rating"]',
+                        ) as HTMLInputElement
                         if (hiddenInput) {
-                          hiddenInput.value = rating.toString();
+                          hiddenInput.value = rating.toString()
                         }
                       }}
                     >
@@ -929,10 +703,7 @@ export default function ProductDetailsClient({
               </div>
 
               <div>
-                <label
-                  htmlFor="reviewComment"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
+                <label htmlFor="reviewComment" className="block text-sm font-medium text-gray-700 mb-2">
                   Comment *
                 </label>
                 <textarea
@@ -950,26 +721,21 @@ export default function ProductDetailsClient({
                   type="submit"
                   className="bg-purple-600 hover:bg-purple-700"
                   onClick={(e) => {
-                    e.preventDefault();
+                    e.preventDefault()
                     // Handle form submission
                     const reviewerName = user
-                      ? `${user.user_metadata?.first_name || ""} ${
-                          user.user_metadata?.last_name || ""
-                        }`.trim() || user.email
-                      : (e.currentTarget.form?.reviewerName as HTMLInputElement)
-                          ?.value;
+                      ? `${user.user_metadata?.first_name || ""} ${user.user_metadata?.last_name || ""}`.trim() ||
+                        user.email
+                      : (e.currentTarget.form?.reviewerName as HTMLInputElement)?.value
 
                     toast.success("Review submitted successfully!", {
-                      description:
-                        "Your review will be published after admin approval.",
-                    });
+                      description: "Your review will be published after admin approval.",
+                    })
                   }}
                 >
                   Submit Review
                 </Button>
-                <p className="text-sm text-gray-500">
-                  * Your review will be published after admin approval
-                </p>
+                <p className="text-sm text-gray-500">* Your review will be published after admin approval</p>
               </div>
             </form>
           </div>
@@ -983,27 +749,17 @@ export default function ProductDetailsClient({
                   // Determine reviewer name and avatar based on user_id
                   const reviewerName =
                     review.user_id && review.user
-                      ? `${review.user.first_name || ""} ${
-                          review.user.last_name || ""
-                        }`.trim() || review.user.email
-                      : review.name || "Anonymous";
+                      ? `${review.user.first_name || ""} ${review.user.last_name || ""}`.trim() || review.user.email
+                      : review.name || "Anonymous"
 
                   const reviewerAvatar =
                     review.user_id && review.user?.avatar
                       ? review.user.avatar
-                      : review.avatar ||
-                        "/placeholder.svg?height=50&width=50&text=User";
+                      : review.avatar || "/placeholder.svg?height=50&width=50&text=User"
 
                   return (
-                    <div
-                      key={review.id}
-                      className="bg-white rounded-lg p-6 shadow-sm"
-                    >
-                      <div
-                        className={`flex items-start gap-4 ${
-                          isRTL ? "flex-row-reverse" : ""
-                        }`}
-                      >
+                    <div key={review.id} className="bg-white rounded-lg p-6 shadow-sm">
+                      <div className={`flex items-start gap-4 ${isRTL ? "flex-row-reverse" : ""}`}>
                         <SafeImage
                           src={reviewerAvatar}
                           alt={reviewerName}
@@ -1013,52 +769,38 @@ export default function ProductDetailsClient({
                           fallbackType="avatar"
                         />
                         <div className="flex-1">
-                          <div
-                            className={`flex items-center justify-between mb-2 ${
-                              isRTL ? "flex-row-reverse" : ""
-                            }`}
-                          >
-                            <h4 className="font-semibold text-gray-900">
-                              {reviewerName}
-                            </h4>
+                          <div className={`flex items-center justify-between mb-2 ${isRTL ? "flex-row-reverse" : ""}`}>
+                            <h4 className="font-semibold text-gray-900">{reviewerName}</h4>
                             <div className="flex items-center">
                               {[...Array(5)].map((_, i) => (
                                 <Star
                                   key={i}
                                   className={`h-4 w-4 ${
-                                    i < (review.rating || 0)
-                                      ? "text-yellow-400 fill-current"
-                                      : "text-gray-300"
+                                    i < (review.rating || 0) ? "text-yellow-400 fill-current" : "text-gray-300"
                                   }`}
                                 />
                               ))}
                             </div>
                           </div>
-                          <p className="text-gray-600 leading-relaxed">
-                            {review.comment}
-                          </p>
+                          <p className="text-gray-600 leading-relaxed">{review.comment}</p>
                           {review.created_at && (
                             <p className="text-sm text-gray-500 mt-2">
-                              {new Date(review.created_at).toLocaleDateString(
-                                locale === "ar" ? "ar-SA" : "en-US"
-                              )}
+                              {new Date(review.created_at).toLocaleDateString(locale === "ar" ? "ar-SA" : "en-US")}
                             </p>
                           )}
                         </div>
                       </div>
                     </div>
-                  );
+                  )
                 })}
             </div>
           ) : (
             <div className="text-center py-8">
-              <p className="text-gray-500">
-                No approved reviews yet. Be the first to review this product!
-              </p>
+              <p className="text-gray-500">No approved reviews yet. Be the first to review this product!</p>
             </div>
           )}
         </div>
       </div>
     </div>
-  );
+  )
 }

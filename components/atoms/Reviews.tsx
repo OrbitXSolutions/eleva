@@ -192,7 +192,7 @@ export default function Reviews() {
               <button
                 key={index}
                 className={`w-3 h-3 rounded-full transition-colors duration-300 ${
-                  index === currentIndex ? "bg-purple-600" : "bg-gray-300"
+                  index === currentIndex ? "bg-secondary" : "bg-gray-300"
                 }`}
                 onClick={() => {
                   setIsAutoPlaying(false);

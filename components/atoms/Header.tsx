@@ -58,45 +58,45 @@ export default function Header() {
               href="/"
               className={`font-medium transition-colors flex items-center gap-2 ${
                 isActiveLink("/")
-                  ? "text-purple-600 border-b-2 border-purple-600 pb-1"
-                  : "text-gray-700 hover:text-gray-900"
+                  ? "text-secondary border-b-2 border-secondary pb-1"
+                  : "text-primary hover:text-gray-900"
               }`}
             >
               {t("header.nav.home")}
-              <LoadingIndicator loaderClassName="text-purple-600" />
+              <LoadingIndicator loaderClassName="text-secondary" />
             </Link>
             <Link
               href="/products"
               className={`font-medium transition-colors flex items-center gap-2 ${
                 isActiveLink("/products")
-                  ? "text-purple-600 border-b-2 border-purple-600 pb-1"
-                  : "text-gray-700 hover:text-gray-900"
+                  ? "text-secondary border-b-2 border-secondary pb-1"
+                  : "text-primary hover:text-gray-900"
               }`}
             >
               {t("header.nav.products")}
-              <LoadingIndicator loaderClassName="text-purple-600" />
+              <LoadingIndicator loaderClassName="text-secondary" />
             </Link>
             <Link
               href="/gifts"
               className={`font-medium transition-colors flex items-center gap-2 ${
                 isActiveLink("/gifts")
-                  ? "text-purple-600 border-b-2 border-purple-600 pb-1"
-                  : "text-gray-700 hover:text-gray-900"
+                  ? "text-secondary border-b-2 border-secondary pb-1"
+                  : "text-primary hover:text-gray-900"
               }`}
             >
               {t("header.nav.gifts")}
-              <LoadingIndicator loaderClassName="text-purple-600" />
+              <LoadingIndicator loaderClassName="text-secondary" />
             </Link>
             <Link
               href="/about"
               className={`font-medium transition-colors flex items-center gap-2 ${
                 isActiveLink("/about")
-                  ? "text-purple-600 border-b-2 border-purple-600 pb-1"
-                  : "text-gray-700 hover:text-gray-900"
+                  ? "text-secondary border-b-2 border-secondary pb-1"
+                  : "text-primary hover:text-gray-900"
               }`}
             >
               {t("header.nav.about")}
-              <LoadingIndicator loaderClassName="text-purple-600" />
+              <LoadingIndicator loaderClassName="text-secondary" />
             </Link>
           </nav>
 
@@ -173,45 +173,45 @@ export default function Header() {
                 href="/"
                 className={`font-medium transition-colors flex items-center gap-2 ${
                   isActiveLink("/")
-                    ? "text-purple-600 bg-purple-50 px-3 py-2 rounded-lg"
-                    : "text-gray-700 hover:text-gray-900"
+                    ? "text-secondary bg-purple-50 px-3 py-2 rounded-lg"
+                    : "text-primary hover:text-gray-900"
                 }`}
               >
                 {t("header.nav.home")}
-                <LoadingIndicator loaderClassName="text-purple-600" />
+                <LoadingIndicator loaderClassName="text-secondary" />
               </Link>
               <Link
                 href="/products"
                 className={`font-medium transition-colors flex items-center gap-2 ${
                   isActiveLink("/products")
-                    ? "text-purple-600 bg-purple-50 px-3 py-2 rounded-lg"
-                    : "text-gray-700 hover:text-gray-900"
+                    ? "text-secondary bg-purple-50 px-3 py-2 rounded-lg"
+                    : "text-primary hover:text-gray-900"
                 }`}
               >
                 {t("header.nav.products")}
-                <LoadingIndicator loaderClassName="text-purple-600" />
+                <LoadingIndicator loaderClassName="text-secondary" />
               </Link>
               <Link
                 href="/gifts"
                 className={`font-medium transition-colors flex items-center gap-2 ${
                   isActiveLink("/gifts")
-                    ? "text-purple-600 bg-purple-50 px-3 py-2 rounded-lg"
-                    : "text-gray-700 hover:text-gray-900"
+                    ? "text-secondary bg-purple-50 px-3 py-2 rounded-lg"
+                    : "text-primary hover:text-gray-900"
                 }`}
               >
                 {t("header.nav.gifts")}
-                <LoadingIndicator loaderClassName="text-purple-600" />
+                <LoadingIndicator loaderClassName="text-secondary" />
               </Link>
               <Link
                 href="/about"
                 className={`font-medium transition-colors flex items-center gap-2 ${
                   isActiveLink("/about")
-                    ? "text-purple-600 bg-purple-50 px-3 py-2 rounded-lg"
-                    : "text-gray-700 hover:text-gray-900"
+                    ? "text-secondary bg-purple-50 px-3 py-2 rounded-lg"
+                    : "text-primary hover:text-gray-900"
                 }`}
               >
                 {t("header.nav.about")}
-                <LoadingIndicator loaderClassName="text-purple-600" />
+                <LoadingIndicator loaderClassName="text-secondary" />
               </Link>
             </div>
           </div>

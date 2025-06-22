@@ -1,9 +1,9 @@
-import { getImageUrl } from "./supabase-storage"
+import { getImageUrl } from "./supabase-storage";
 
 /**
  * Image loading states
  */
-export type ImageLoadingState = "loading" | "loaded" | "error"
+export type ImageLoadingState = "loading" | "loaded" | "error";
 
 /**
  * Image configuration for different use cases
@@ -34,7 +34,7 @@ export const ImageConfigs = {
     quality: 85,
     placeholder: "/placeholder.svg?height=200&width=200&text=Category",
   },
-} as const
+} as const;
 
 /**
  * Gets optimized image props for Next.js Image component
@@ -42,10 +42,10 @@ export const ImageConfigs = {
 export function getOptimizedImageProps(
   imagePath: string | null | undefined,
   type: keyof typeof ImageConfigs,
-  alt: string,
+  alt: string
 ) {
-  const config = ImageConfigs[type]
-  const src = getImageUrl(imagePath, config.placeholder)
+  const config = ImageConfigs[type];
+  const src = getImageUrl(imagePath, config.placeholder);
 
   return {
     src,
@@ -53,7 +53,7 @@ export function getOptimizedImageProps(
     sizes: config.sizes,
     quality: config.quality,
     className: "object-cover",
-  }
+  };
 }
 
 /**
@@ -61,22 +61,22 @@ export function getOptimizedImageProps(
  */
 export function preloadImage(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    const img = new Image()
-    img.onload = () => resolve()
-    img.onerror = reject
-    img.src = src
-  })
+    const img = new Image();
+    img.onload = () => resolve();
+    img.onerror = reject;
+    img.src = src;
+  });
 }
 
 /**
  * Generates responsive image URLs for different screen sizes
  */
 export function getResponsiveImageUrls(imagePath: string | null | undefined) {
-  const baseUrl = getImageUrl(imagePath)
+  const baseUrl = getImageUrl(imagePath);
 
   return {
     small: `${baseUrl}?width=400&height=400&quality=75`,
     medium: `${baseUrl}?width=800&height=800&quality=85`,
     large: `${baseUrl}?width=1200&height=1200&quality=90`,
-  }
+  };
 }

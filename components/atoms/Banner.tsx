@@ -19,7 +19,7 @@ export default function Banner() {
   return (
     <section className="py-16">
       <div className="container mx-auto px-4">
-        <div className="relative bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl overflow-hidden">
+        <div className="relative bg-gradient-to-r from-secondary to-pink-600 rounded-3xl overflow-hidden">
           <div className="grid lg:grid-cols-2 items-center">
             {/* Content */}
             <div className="p-8 lg:p-16 text-white">
@@ -41,14 +41,14 @@ export default function Banner() {
                 >
                   <Button
                     size="lg"
-                    className="bg-white text-purple-600 hover:bg-gray-100"
+                    className="bg-white text-secondary hover:bg-gray-100"
                   >
                     {t("banner.shopSale")}
                   </Button>
                   <Button
                     variant="outline"
                     size="lg"
-                    className="border-white text-white hover:bg-white hover:text-purple-600"
+                    className="border-white text-white hover:bg-white hover:text-secondary"
                   >
                     {t("banner.viewDeals")}
                   </Button>

@@ -14,13 +14,13 @@ import {
   TrendingDown,
   ArrowUpAZ,
   Star,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useServerTranslation } from "@/hooks/useServerTranslation";
 import ProductListItem from "./ProductListItem";
-import LoadingSpinner from "./LoadingSpinner";
 import {
   Pagination,
   PaginationContent,
@@ -29,8 +29,9 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { ProductWithUserData } from "@/lib/types/database.types";
+import { useAction } from "next-safe-action/hooks";
 import ProductCard from "@/components/atoms/ProductCard";
+import { ProductWithUserData } from "@/lib/types/database.types";
 
 interface Category {
   id: number;
@@ -151,38 +152,51 @@ export default function ProductsPageClient({
     [pathname, router, searchParams]
   );
 
-  const handleSearch = useCallback(
-    async (query: string, categoryId?: number, newPage = 1) => {
-      setLoading(true);
+  const searchAction = useAction(
+    async (params: any) => {
+      const searchParams = new URLSearchParams();
+      if (params.query) searchParams.set("q", params.query);
+      if (params.categoryId)
+        searchParams.set("category", params.categoryId.toString());
+      searchParams.set("page", params.page.toString());
+      searchParams.set("sort", params.sort);
 
-      try {
-        const params = new URLSearchParams();
-        if (query) params.set("q", query);
-        if (categoryId) params.set("category", categoryId.toString());
-        params.set("page", newPage.toString());
-        params.set("sort", sortBy);
-        // Update URL with sort parameter
-        updateURL({
-          q: query || undefined,
-          category: categoryId?.toString(),
-          page: newPage > 1 ? newPage.toString() : undefined,
-          sort: sortBy !== "newest" ? sortBy : undefined,
-        });
-
-        const response = await fetch(`/api/products?${params.toString()}`);
-        const data = await response.json();
-
+      const response = await fetch(`/api/products?${searchParams.toString()}`);
+      const data = await response.json();
+      return data;
+    },
+    {
+      onSuccess: (data: any) => {
         setProducts(data.products || []);
-        setPage(newPage);
+        setPage(data.page || 1);
         setTotalPages(data.totalPages || 1);
         setTotalProducts(data.total || 0);
-      } catch (error) {
+      },
+      onError: (error) => {
         console.error("Error searching products:", error);
-      } finally {
-        setLoading(false);
-      }
+      },
+    }
+  );
+
+  const handleSearch = useCallback(
+    async (query: string, categoryId?: number, newPage = 1) => {
+      // Update URL without reloading
+      updateURL({
+        q: query || undefined,
+        category: categoryId?.toString(),
+        page: newPage > 1 ? newPage.toString() : undefined,
+        sort: sortBy !== "newest" ? sortBy : undefined,
+      });
+
+      // Execute the search action
+      searchAction.execute({
+        query,
+        categoryId,
+        page: newPage,
+        sort: sortBy,
+      });
     },
-    [sortBy, updateURL]
+    [sortBy, updateURL, searchAction]
   );
 
   const handleCategoryChange = (categoryId: string) => {
@@ -196,6 +210,12 @@ export default function ProductsPageClient({
     setSearchQuery("");
     setSelectedCategory(undefined);
     setSortBy("newest");
+    updateURL({
+      q: undefined,
+      category: undefined,
+      page: undefined,
+      sort: undefined,
+    });
     handleSearch("", undefined, 1);
   };
 
@@ -294,14 +314,20 @@ export default function ProductsPageClient({
                   defaultValue={searchQuery}
                   className={`${isRTL ? "pr-10" : "pl-10"} h-12`}
                   dir={isRTL ? "rtl" : "ltr"}
+                  disabled={searchAction.isExecuting}
                 />
               </div>
               <Button
                 type="submit"
                 size="lg"
                 className="bg-purple-600 hover:bg-purple-700"
+                disabled={searchAction.isExecuting}
               >
-                <Search className="h-5 w-5" />
+                {searchAction.isExecuting ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Search className="h-5 w-5" />
+                )}
               </Button>
               <Button
                 type="button"
@@ -309,6 +335,7 @@ export default function ProductsPageClient({
                 size="lg"
                 onClick={() => setShowFilters(!showFilters)}
                 className="lg:hidden"
+                disabled={searchAction.isExecuting}
               >
                 <Filter className="h-5 w-5" />
               </Button>
@@ -329,9 +356,18 @@ export default function ProductsPageClient({
                       size="sm"
                       onClick={() => {
                         setSelectedCategory(undefined);
-                        handleSearch(searchQuery, undefined, 1);
+                        setSearchQuery("");
+                        setSortBy("newest");
+                        updateURL({
+                          q: undefined,
+                          category: undefined,
+                          page: undefined,
+                          sort: undefined,
+                        });
+                        handleSearch("", undefined, 1);
                       }}
                       className="flex flex-col items-center gap-1 h-auto py-2 px-3"
+                      disabled={searchAction.isExecuting}
                     >
                       <div className="w-8 h-8 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center">
                         <Grid className="h-4 w-4 text-purple-600" />
@@ -355,6 +391,7 @@ export default function ProductsPageClient({
                           handleSearch(searchQuery, category.id, 1);
                         }}
                         className="flex flex-col items-center gap-1 h-auto py-2 px-3"
+                        disabled={searchAction.isExecuting}
                       >
                         <div className="w-8 h-8 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center">
                           <div className="w-6 h-6 bg-purple-200 rounded-full"></div>
@@ -389,6 +426,7 @@ export default function ProductsPageClient({
                           handleSearch(searchQuery, selectedCategory, 1);
                         }}
                         className="flex items-center gap-2"
+                        disabled={searchAction.isExecuting}
                       >
                         <Clock className="h-4 w-4" />
                         {t("products.sort.newest") || "Newest"}
@@ -402,6 +440,7 @@ export default function ProductsPageClient({
                           handleSearch(searchQuery, selectedCategory, 1);
                         }}
                         className="flex items-center gap-2"
+                        disabled={searchAction.isExecuting}
                       >
                         <TrendingUp className="h-4 w-4" />
                         {t("products.sort.priceLow") || "Price ↑"}
@@ -417,6 +456,7 @@ export default function ProductsPageClient({
                           handleSearch(searchQuery, selectedCategory, 1);
                         }}
                         className="flex items-center gap-2"
+                        disabled={searchAction.isExecuting}
                       >
                         <TrendingDown className="h-4 w-4" />
                         {t("products.sort.priceHigh") || "Price ↓"}
@@ -430,6 +470,7 @@ export default function ProductsPageClient({
                           handleSearch(searchQuery, selectedCategory, 1);
                         }}
                         className="flex items-center gap-2"
+                        disabled={searchAction.isExecuting}
                       >
                         <ArrowUpAZ className="h-4 w-4" />
                         {t("products.sort.nameAZ") || "A-Z"}
@@ -445,6 +486,7 @@ export default function ProductsPageClient({
                           handleSearch(searchQuery, selectedCategory, 1);
                         }}
                         className="flex items-center gap-2"
+                        disabled={searchAction.isExecuting}
                       >
                         <Star className="h-4 w-4" />
                         {t("products.sort.ratingHigh") || "Rating ↓"}
@@ -460,6 +502,7 @@ export default function ProductsPageClient({
                           handleSearch(searchQuery, selectedCategory, 1);
                         }}
                         className="flex items-center gap-2"
+                        disabled={searchAction.isExecuting}
                       >
                         <Star className="h-4 w-4" />
                         {t("products.sort.ratingLow") || "Rating ↑"}
@@ -480,6 +523,7 @@ export default function ProductsPageClient({
                         size="lg"
                         onClick={() => setViewMode("grid")}
                         className="px-4"
+                        disabled={searchAction.isExecuting}
                       >
                         <Grid className="h-5 w-5" />
                       </Button>
@@ -489,6 +533,7 @@ export default function ProductsPageClient({
                         size="lg"
                         onClick={() => setViewMode("list")}
                         className="px-4"
+                        disabled={searchAction.isExecuting}
                       >
                         <List className="h-5 w-5" />
                       </Button>
@@ -519,9 +564,9 @@ export default function ProductsPageClient({
                   <X
                     className="h-3 w-3 cursor-pointer"
                     onClick={() => {
-                      const url = new URL(window.location.href);
-                      url.searchParams.delete("q");
-                      window.location.href = url.toString();
+                      setSearchQuery("");
+                      updateURL({ q: undefined });
+                      handleSearch("", selectedCategory, 1);
                     }}
                   />
                 </Badge>
@@ -532,9 +577,9 @@ export default function ProductsPageClient({
                   <X
                     className="h-3 w-3 cursor-pointer"
                     onClick={() => {
-                      const url = new URL(window.location.href);
-                      url.searchParams.delete("category");
-                      window.location.href = url.toString();
+                      setSelectedCategory(undefined);
+                      updateURL({ category: undefined });
+                      handleSearch(searchQuery, undefined, 1);
                     }}
                   />
                 </Badge>
@@ -542,10 +587,9 @@ export default function ProductsPageClient({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
-                  window.location.href = "/products";
-                }}
+                onClick={handleClearFilters}
                 className="text-purple-600"
+                disabled={searchAction.isExecuting}
               >
                 {t("products.clearAll") || "Clear All"}
               </Button>
@@ -579,8 +623,11 @@ export default function ProductsPageClient({
         </div>
 
         {/* Products Grid/List */}
-        {loading && sortedProducts.length === 0 ? (
-          <LoadingSpinner />
+        {searchAction.isExecuting ? (
+          <div className="flex justify-center items-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+            <span className="ml-2 text-gray-600">Loading products...</span>
+          </div>
         ) : sortedProducts.length > 0 ? (
           <>
             {viewMode === "grid" ? (
@@ -599,7 +646,7 @@ export default function ProductsPageClient({
 
             {/* Pagination */}
             {(totalPages > 1 || (products.length >= 8 && hasMore)) &&
-              !loading && (
+              !searchAction.isExecuting && (
                 <div className="flex justify-center mt-8">
                   <Pagination>
                     <PaginationContent>

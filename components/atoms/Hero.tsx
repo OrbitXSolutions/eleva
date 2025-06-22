@@ -25,7 +25,7 @@ export default function Hero() {
             <div className="space-y-4">
               <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight">
                 {t("hero.title")}
-                <span className="text-purple-600 block">
+                <span className="text-secondary block">
                   {t("hero.titleHighlight")}
                 </span>
               </h1>
@@ -41,14 +41,14 @@ export default function Hero() {
             >
               <Button
                 size="lg"
-                className="bg-purple-600 hover:bg-purple-700 text-white px-8"
+                className="bg-secondary hover:bg-purple-700 text-white px-8"
               >
                 {t("hero.shopNow")}
               </Button>
               <Button
                 variant="outline"
                 size="lg"
-                className="border-purple-600 text-purple-600 hover:bg-purple-50"
+                className="border-secondary text-secondary hover:bg-purple-50"
               >
                 {t("hero.exploreCollections")}
               </Button>

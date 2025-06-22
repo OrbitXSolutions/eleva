@@ -1,4 +1,7 @@
-import ClientWrapper from "@/components/custom/ClientWrapper";
+import type { Metadata } from "next";
+import { Suspense } from "react";
+
+import ProductsPageClient from "./ProductsPageClient";
 import { searchProducts, getCategories } from "@/lib/common/supabase-queries";
 import {
   getLocaleFromSearchParams,
@@ -7,10 +10,6 @@ import {
   getTranslations,
 } from "@/lib/common/translations";
 import { createSsrClient } from "@/lib/supabase/server";
-import { Header } from "@radix-ui/react-accordion";
-import { Metadata } from "next";
-import { Suspense } from "react";
-import ProductsPageClient from "./ProductsPageClient";
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;

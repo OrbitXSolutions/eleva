@@ -190,7 +190,7 @@ export default async function Footer() {
                   placeholder="Enter your email"
                   className="bg-gray-800 border-gray-700 text-white placeholder-gray-400 rounded-r-none"
                 />
-                <Button className="bg-purple-600 hover:bg-purple-700 rounded-l-none">
+                <Button className="bg-secondary hover:bg-purple-700 rounded-l-none">
                   <Mail className="h-4 w-4" />
                 </Button>
               </div>

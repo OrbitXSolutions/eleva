@@ -30,8 +30,20 @@ export interface CheckoutResult {
 }
 
 // Get user's addresses
-export async function getUserAddresses(userId: number) {
+export async function getUserAddresses(userId: string) {
   const supabase = await createSsrClient();
+
+  // First get the user's internal ID
+  const { data: userData, error: userError } = await supabase
+    .from("users")
+    .select("id")
+    .eq("user_id", userId)
+    .single();
+
+  if (userError || !userData) {
+    console.error("Error fetching user:", userError);
+    return [];
+  }
 
   const { data, error } = await supabase
     .from("addresses")
@@ -41,7 +53,7 @@ export async function getUserAddresses(userId: number) {
       state:states(name_en, name_ar)
     `
     )
-    .eq("user_id", userId)
+    .eq("user_id", userData.id)
     .eq("is_deleted", false)
     .order("is_default", { ascending: false })
     .order("created_at", { ascending: false });
@@ -60,7 +72,7 @@ export async function getUAEStates() {
 
   const { data, error } = await supabase
     .from("states")
-    .select("code, name_en, name_ar")
+    .select("code, name_en, name_ar, delivery_fee")
     .eq("country_code", "AE")
     .order("name_en");
 
@@ -74,7 +86,7 @@ export async function getUAEStates() {
 
 // Create address for user
 export async function createAddress(
-  userId: number,
+  userInternalId: number,
   addressData: {
     fullName: string;
     phone: string;
@@ -91,20 +103,19 @@ export async function createAddress(
     await supabase
       .from("addresses")
       .update({ is_default: false })
-      .eq("user_id", userId);
+      .eq("user_id", userInternalId);
   }
 
   const { data, error } = await supabase
     .from("addresses")
     .insert({
-      user_id: userId,
+      user_id: userInternalId,
       full_name: addressData.fullName,
       phone: addressData.phone,
       address: addressData.address,
       state_code: addressData.stateCode,
       notes: addressData.notes,
       is_default: addressData.isDefault || false,
-      country_code: "AE",
     })
     .select()
     .single();
@@ -117,19 +128,92 @@ export async function createAddress(
   return data;
 }
 
+// Get or create user in public.users table
+async function getOrCreateUser(
+  authUserId: string,
+  userData?: {
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+  }
+) {
+  const supabase = await createSsrClient();
+
+  // Try to get existing user
+  let { data: user, error } = await supabase
+    .from("users")
+    .select("id")
+    .eq("user_id", authUserId)
+    .single();
+
+  if (error && error.code === "PGRST116") {
+    // User doesn't exist, create it
+    if (!userData) {
+      throw new Error("User data required for new user creation");
+    }
+
+    const { data: newUser, error: createError } = await supabase
+      .from("users")
+      .insert({
+        user_id: authUserId,
+        email: userData.email,
+        first_name: userData.firstName,
+        last_name: userData.lastName,
+        phone: userData.phone,
+      })
+      .select("id")
+      .single();
+
+    if (createError) {
+      console.error("Error creating user:", createError);
+      throw new Error("Failed to create user record");
+    }
+
+    user = newUser;
+  } else if (error) {
+    console.error("Error fetching user:", error);
+    throw new Error("Failed to fetch user");
+  }
+
+  return user;
+}
+
+// Calculate order totals
+function calculateOrderTotals(cartItems: CartItem[], deliveryFee = 0) {
+  const subtotal = cartItems.reduce(
+    (sum, item) => sum + (item.product.price || 0) * item.quantity,
+    0
+  );
+  const tax = subtotal * 0.05; // 5% VAT in UAE
+  const total = subtotal + tax + deliveryFee;
+
+  return {
+    subtotal,
+    tax,
+    deliveryFee,
+    total,
+  };
+}
+
 // Process checkout for authenticated user
 export async function processAuthenticatedCheckout(
-  userId: number,
+  authUserId: string,
   checkoutData: CheckoutData
 ): Promise<CheckoutResult> {
   const supabase = await createSsrClient();
 
   try {
+    // Get user's internal ID
+    const user = await getOrCreateUser(authUserId);
+    const userInternalId = user?.id;
+    if (!userInternalId) throw new Error("User not found");
+
     let addressId = checkoutData.selectedAddressId;
 
     // Create new address if not using existing one
     if (!addressId) {
-      const newAddress = await createAddress(userId, {
+      const newAddress = await createAddress(userInternalId, {
         fullName: checkoutData.fullName,
         phone: checkoutData.phone,
         address: checkoutData.address,
@@ -140,28 +224,34 @@ export async function processAuthenticatedCheckout(
       addressId = newAddress.id;
     }
 
+    // Get delivery fee for the state
+    const { data: stateData } = await supabase
+      .from("states")
+      .select("delivery_fee")
+      .eq("code", checkoutData.stateCode)
+      .single();
+
+    const deliveryFee = Number(stateData?.delivery_fee || 0);
+
+    // Calculate totals
+    const totals = calculateOrderTotals(checkoutData.cartItems, deliveryFee);
+
     // Create order
     const orderCode = `ORD-${Date.now()}-${Math.random()
       .toString(36)
-      .substr(2, 9)}`;
+      .substr(2, 9)
+      .toUpperCase()}`;
 
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .insert({
         code: orderCode,
-        user_id: userId,
+        user_id: userInternalId,
         address_id: addressId,
         status: "pending",
-        subtotal: checkoutData.cartItems.reduce(
-          (sum, item) => sum + (item.product.price || 0) * item.quantity,
-          0
-        ),
-        total_price: checkoutData.cartItems.reduce(
-          (sum, item) => sum + (item.product.price || 0) * item.quantity,
-          0
-        ),
-        currency_code:
-          checkoutData.cartItems[0]?.product.currency_code || "USD",
+        total_price: totals.total,
+        payment_method: "cash", // Default to cash on delivery
+        user_note: checkoutData.notes,
       })
       .select()
       .single();
@@ -177,7 +267,6 @@ export async function processAuthenticatedCheckout(
       product_id: item.product.id,
       quantity: item.quantity,
       price: item.product.price || 0,
-      total_price: (item.product.price || 0) * item.quantity,
     }));
 
     const { error: itemsError } = await supabase
@@ -223,14 +312,23 @@ export async function processGuestCheckout(
       throw new Error("Passwords do not match");
     }
 
+    if (checkoutData.password.length < 6) {
+      throw new Error("Password must be at least 6 characters long");
+    }
+
+    // Parse full name
+    const nameParts = checkoutData.fullName.trim().split(" ");
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+
     // Register user with Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: checkoutData.email,
       password: checkoutData.password,
       options: {
         data: {
-          first_name: checkoutData.fullName.split(" ")[0] || "",
-          last_name: checkoutData.fullName.split(" ").slice(1).join(" ") || "",
+          first_name: firstName,
+          last_name: lastName,
           phone: checkoutData.phone,
         },
       },
@@ -246,24 +344,25 @@ export async function processGuestCheckout(
     }
 
     const authUserId = authData.user.id;
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const { data: user, error } = await supabase
-      .from("users")
-      .select("id")
-      .eq("user_id", authUserId)
-      .single();
 
-    if (error) {
-      console.error("Error fetching user record:", error);
-      throw new Error("Failed to fetch user record");
+    // Wait for auth user to be created
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // Create user record in public.users table
+    const user = await getOrCreateUser(authUserId, {
+      email: checkoutData.email,
+      firstName,
+      lastName,
+      phone: checkoutData.phone,
+    });
+
+    const userInternalId = user?.id;
+    if (!userInternalId) {
+      throw new Error("Failed to create user record");
     }
 
-    const userId = user.id;
-    // The user record should be automatically created by the trigger
-    // Wait a moment for the trigger to complete
-
     // Create address
-    const newAddress = await createAddress(userId, {
+    const newAddress = await createAddress(userInternalId, {
       fullName: checkoutData.fullName,
       phone: checkoutData.phone,
       address: checkoutData.address,
@@ -272,29 +371,35 @@ export async function processGuestCheckout(
       isDefault: true, // First address is default
     });
 
+    // Get delivery fee for the state
+    const serverSupabase = await createSsrClient();
+    const { data: stateData } = await serverSupabase
+      .from("states")
+      .select("delivery_fee")
+      .eq("code", checkoutData.stateCode)
+      .single();
+
+    const deliveryFee = Number(stateData?.delivery_fee || 0);
+
+    // Calculate totals
+    const totals = calculateOrderTotals(checkoutData.cartItems, deliveryFee);
+
     // Create order
     const orderCode = `ORD-${Date.now()}-${Math.random()
       .toString(36)
-      .substr(2, 9)}`;
+      .substr(2, 9)
+      .toUpperCase()}`;
 
-    const serverSupabase = await createSsrClient();
     const { data: order, error: orderError } = await serverSupabase
       .from("orders")
       .insert({
         code: orderCode,
-        user_id: userId,
+        user_id: userInternalId,
         address_id: newAddress.id,
         status: "pending",
-        subtotal: checkoutData.cartItems.reduce(
-          (sum, item) => sum + (item.product.price || 0) * item.quantity,
-          0
-        ),
-        total_price: checkoutData.cartItems.reduce(
-          (sum, item) => sum + (item.product.price || 0) * item.quantity,
-          0
-        ),
-        currency_code:
-          checkoutData.cartItems[0]?.product.currency_code || "USD",
+        total_price: totals.total,
+        payment_method: "cash", // Default to cash on delivery
+        user_note: checkoutData.notes,
       })
       .select()
       .single();
@@ -310,7 +415,6 @@ export async function processGuestCheckout(
       product_id: item.product.id,
       quantity: item.quantity,
       price: item.product.price || 0,
-      total_price: (item.product.price || 0) * item.quantity,
     }));
 
     const { error: itemsError } = await serverSupabase

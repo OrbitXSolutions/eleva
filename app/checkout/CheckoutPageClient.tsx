@@ -24,11 +24,7 @@ import { toast } from "sonner";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import SafeImage from "@/components/custom/safe-image";
 import { formatPrice } from "@/lib/common/cart";
-import {
-  CheckoutData,
-  processAuthenticatedCheckout,
-  processGuestCheckout,
-} from "@/lib/common/checkout";
+import { CheckoutData } from "@/lib/common/checkout";
 import {
   getProductImageUrl,
   getFirstImageUrl,
@@ -162,6 +158,8 @@ export default function CheckoutPageClient({
     if (!user) {
       // Guest checkout validation
       if (!formData.email) return "Email is required";
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+        return "Please enter a valid email address";
       if (!formData.password) return "Password is required";
       if (!formData.confirmPassword) return "Please confirm your password";
       if (formData.password !== formData.confirmPassword)
@@ -172,14 +170,20 @@ export default function CheckoutPageClient({
 
     if (showNewAddressForm || !selectedAddressId) {
       // Address validation
-      if (!formData.fullName) return "Full name is required";
-      if (!formData.phone) return "Phone number is required";
-      if (!formData.address) return "Address is required";
-      if (!formData.stateCode) return "State is required";
+      if (!formData.fullName.trim()) return "Full name is required";
+      if (!formData.phone.trim()) return "Phone number is required";
+      if (!/^[+]?[0-9\s\-$$$$]{7,15}$/.test(formData.phone.replace(/\s/g, "")))
+        return "Please enter a valid phone number";
+      if (!formData.address.trim()) return "Address is required";
+      if (!formData.stateCode) return "Emirate is required";
     }
 
-    if (!selectedAddressId && !showNewAddressForm) {
+    if (!selectedAddressId && !showNewAddressForm && user) {
       return "Please select an address or add a new one";
+    }
+
+    if (cart.items.length === 0) {
+      return "Your cart is empty";
     }
 
     return null;
@@ -189,6 +193,12 @@ export default function CheckoutPageClient({
     const validationError = validateForm();
     if (validationError) {
       toast.error(validationError);
+      return;
+    }
+
+    if (cart.items.length === 0) {
+      toast.error("Your cart is empty");
+      router.push("/cart");
       return;
     }
 
@@ -210,32 +220,35 @@ export default function CheckoutPageClient({
 
       let result;
       if (user) {
-        result = await processAuthenticatedCheckout(
-          user.user_metadata.user_id,
-          checkoutData
-        );
+        result = await handleAuthenticatedCheckout(checkoutData);
       } else {
-        result = await processGuestCheckout(checkoutData);
+        // result = await handleGuestCheckout(checkoutData);
       }
 
-      if (result.success) {
+      if (result.success && result.orderCode) {
         // Clear cart
         clear();
 
         toast.success("Order placed successfully!", {
           description: `Order ${result.orderCode} has been created`,
+          duration: 5000,
         });
 
         // Redirect to order confirmation
         router.push(`/orders/${result.orderCode}`);
       } else {
         toast.error("Checkout failed", {
-          description: result.error,
+          description: result.error || "An unexpected error occurred",
+          duration: 5000,
         });
       }
     } catch (error) {
       console.error("Checkout error:", error);
-      toast.error("An unexpected error occurred");
+      toast.error("An unexpected error occurred", {
+        description:
+          "Please try again or contact support if the problem persists",
+        duration: 5000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -766,4 +779,7 @@ export default function CheckoutPageClient({
       </div>
     </div>
   );
+}
+function handleAuthenticatedCheckout(checkoutData: CheckoutData): any {
+  throw new Error("Function not implemented.");
 }
