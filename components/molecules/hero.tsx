@@ -5,6 +5,7 @@ import { getImageUrl } from "@/lib/constants/supabase-storage";
 
 import { useTranslations } from "next-intl";
 import SafeImage from "../_common/safe-image";
+import Image from "next/image";
 
 export default function Hero() {
 const t = useTranslations("hero");
@@ -18,7 +19,7 @@ const t = useTranslations("hero");
 
   return (
     <>
-      <img src={heroImageUrl} width={'100%'} alt="" />
+      <Image src={heroImageUrl} className="h-full w-full" priority width={1200} height={600} alt="" />
    
     </>
   );

@@ -236,8 +236,10 @@ export default function ProductCard({
             </div>
           )}
 
-          <div className="flex items-center justify-center justify-between mb-3">
-            <div className={`flex items-center space-x-2 `}>
+          <div className="flex items-center justify-center  mb-3">
+            <div
+              className={`flex items-center flex-wrap justify-center space-x-2 `}
+            >
               <span className="text-lg font-bold text-gray-900">
                 {formatPrice(product.price, product.currency, locale)}
               </span>

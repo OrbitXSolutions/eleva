@@ -27,14 +27,13 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const locale = await getLocale();
+  const dir = locale === "ar" ? "rtl" : "ltr";
   return (
-    <html lang={locale}>
+    <html lang={locale} dir={dir}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <RootWrapper
-      
-        >
+        <RootWrapper>
           <AppHeader />
           {children}
         </RootWrapper>

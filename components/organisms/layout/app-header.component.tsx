@@ -10,6 +10,7 @@ import { usePathname } from "next/navigation";
 import LoadingIndicator from "@/components/atoms/LoadingIndicator";
 import { useTranslations } from "next-intl";
 import { useCart } from "@/components/_core/providers/cart-provider";
+import LanguageSwitcher from "@/components/atoms/langauge-switcher";
 // import AuthButton from "./AuthButton";
 
 
@@ -17,8 +18,9 @@ import { useCart } from "@/components/_core/providers/cart-provider";
 export default function AppHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const {cart} = useCart();
-  
+
   const t = useTranslations("header");
+  
 //   const { t, isRTL } = {
 // 	t: (key: string) => key, // Placeholder for translation function
 // 	isRTL: false, // Placeholder for RTL check
@@ -125,7 +127,7 @@ export default function AppHeader() {
               </div>
 
               {/* Language Switcher */}
-              {/* <LanguageSwitcher /> */}
+              <LanguageSwitcher />
 
               {/* Action buttons */}
               {/* <AuthButton /> */}
