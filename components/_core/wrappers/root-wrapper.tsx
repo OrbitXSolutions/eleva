@@ -16,7 +16,7 @@ export function RootWrapper({ children }: Props) {
       enableSystem
       disableTransitionOnChange
     >
-      <NextIntlClientProvider>
+      <NextIntlClientProvider >
         <ClientWrapper>{children}</ClientWrapper>
         <Toaster
           richColors

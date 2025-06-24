@@ -8,6 +8,7 @@ export class SupabaseStorageBuckets {
   static readonly IMAGES = {
     name: "images",
     folders: {
+      ROOT: "",
       CATEGORIES: "categories",
       USERS: "users",
       PRODUCTS: "products",
@@ -21,9 +22,12 @@ export class SupabaseStorageBuckets {
  * @param fallback - Fallback image URL if imagePath is null/undefined
  * @returns Full Supabase storage URL or fallback
  */
+type Folders = keyof typeof SupabaseStorageBuckets.IMAGES.folders;
 export function getImageUrl(
   imagePath: string | null | undefined,
-  fallback?: string
+  fallback?: string,
+  folder: Folders = "ROOT",
+
 ): string {
   if (!imagePath) {
     return fallback || "/placeholder.svg?height=400&width=300";
@@ -36,8 +40,9 @@ export function getImageUrl(
 
   // If it starts with a slash, remove it to avoid double slashes
   const cleanPath = imagePath.startsWith("/") ? imagePath.slice(1) : imagePath;
+  const _folder = SupabaseStorageBuckets.IMAGES.folders[folder];
 
-  return `${SupabasePaths.IMAGES}/${cleanPath}`;
+  return `${SupabasePaths.IMAGES}/${_folder}/${cleanPath}`;
 }
 
 /**
@@ -52,7 +57,8 @@ export function getProductImageUrl(
 ): string {
   return getImageUrl(
     imagePath,
-    fallback || "/placeholder.svg?height=400&width=300&text=Product"
+    fallback || "/placeholder.svg?height=400&width=300&text=Product",
+    'PRODUCTS'
   );
 }
 
@@ -68,7 +74,8 @@ export function getUserAvatarUrl(
 ): string {
   return getImageUrl(
     imagePath,
-    fallback || "/placeholder.svg?height=60&width=60&text=User"
+    fallback || "/placeholder.svg?height=60&width=60&text=User",
+    'USERS'
   );
 }
 
@@ -84,7 +91,8 @@ export function getCategoryImageUrl(
 ): string {
   return getImageUrl(
     imagePath,
-    fallback || "/placeholder.svg?height=200&width=200&text=Category"
+    fallback || "/placeholder.svg?height=200&width=200&text=Category",
+    'CATEGORIES'
   );
 }
 
@@ -102,5 +110,5 @@ export function getFirstImageUrl(
     return fallback || "/placeholder.svg?height=400&width=300";
   }
 
-  return getImageUrl(images[0], fallback);
+  return getImageUrl(images[0], fallback, 'PRODUCTS');
 }

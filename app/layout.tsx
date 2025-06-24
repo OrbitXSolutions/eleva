@@ -4,7 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/lib/theme-provider";
 import AppHeader from "@/components/organisms/layout/app-header.component";
 import { getLocale } from "next-intl/server";
-import { RootWrapper } from "@/components/wrappers/root-wrapper";
+import { RootWrapper } from "@/components/_core/wrappers/root-wrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

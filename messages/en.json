@@ -89,7 +89,11 @@
       "ratingHigh": "Rating: High to Low",
       "ratingLow": "Rating: Low to High"
     },
-    "description": "Description",
+    "auth": {
+      "login": "Login",
+      "loginRequired": "Login Required",
+      "loginToAddFavorites": "Please login to add items to your favorites"
+    },
     "details": "Product Details",
     "quantity": "Quantity",
     "available": "available"

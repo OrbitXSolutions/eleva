@@ -3,7 +3,7 @@
 import type React from "react";
 
 import { Button } from "@/components/ui/button";
-import { Heart, Link, ShoppingBag, Star } from "lucide-react";
+import { Heart, ShoppingBag, Star } from "lucide-react";
 import { ProductWithUserData } from "@/lib/types/database.types";
 import { useLocale, useTranslations } from "next-intl";
 import { useSupabaseUser } from "@/hooks/use-supabase-user";
@@ -13,6 +13,8 @@ import { getProductImageUrl, getFirstImageUrl } from "@/lib/constants/supabase-s
 import SafeImage from "../_common/safe-image";
 import { formatPrice } from "@/lib/common/cart";
 import { useCart } from "../_core/providers/cart-provider";
+import Link from "next/link";
+import Image from "next/image";
 
 
 interface ProductCardProps {
@@ -24,10 +26,11 @@ export default function ProductCard({
   product,
   showNewBadge = false,
 }: ProductCardProps) {
-  const t = useTranslations();
+  const t = useTranslations('');
   const locale = useLocale();
   const { user } = useSupabaseUser();
   const { cart, addItem, updateQuantity, removeItem } = useCart();
+
 //   const { addFavorite, removeFavorite } = useFavorites();
   const searchParams = useSearchParams();
 
@@ -67,7 +70,7 @@ export default function ProductCard({
   const handleAddToCart = () => {
     if (!isInStock) return;
 
-    // addItem(product, 1);
+    addItem(product, 1);
     toast.success(t("addedToCart"), {
       description: getProductName(),
       action: {
@@ -108,14 +111,14 @@ export default function ProductCard({
 
   const handleIncreaseQuantity = () => {
     if (!isInStock) return;
-    // addItem(product, 1);
+    addItem(product, 1);
   };
 
   const handleDecreaseQuantity = () => {
     if (cartQuantity > 1) {
-    //   updateQuantity(product.id, cartQuantity - 1);
+      updateQuantity(product.id, cartQuantity - 1);
     } else {
-    //   removeItem(product.id);
+      removeItem(product.id);
     }
   };
 
@@ -151,12 +154,19 @@ export default function ProductCard({
   const productLink = `/products/${getProductSlug()}${
     currentSearchParams ? `?${currentSearchParams}` : ""
   }`;
-
+  // return <></>;
   return (
     <Link href={productLink} className="block">
       <div className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 cursor-pointer">
-        <div className="relative aspect-square overflow-hidden">
-          <SafeImage
+        <div className="relative h-[250px] overflow-hidden">
+          <Image
+            src={primaryImage || "/placeholder.svg"}
+            alt=""
+            fill
+            className="bg-amber-50/20"
+            objectFit="contain"
+          />
+          {/* <SafeImage
             src={primaryImage || "/placeholder.svg"}
             alt={getProductName() || "Product"}
             fill
@@ -166,24 +176,24 @@ export default function ProductCard({
             context={`Product ${product.id} - ${getProductName()}`}
             onImageError={handleImageError}
             priority={showNewBadge} // Prioritize new arrivals
-          />
+          /> */}
 
           {showNewBadge && (
-            <div className="absolute top-4 left-4 bg-secondary text-white px-3 py-1 rounded-full text-sm font-medium z-10">
-              {t("new")}
+            <div className="absolute top-4 left-4 bg-primary text-white px-3 py-1 rounded-full text-sm font-medium z-10">
+              {t("products.new")}
             </div>
           )}
 
           {!isInStock && (
             <div className="absolute top-4 right-4 bg-red-600 text-white px-3 py-1 rounded-full text-sm font-medium z-10">
-              {t("outOfStock")}
+              {t("products.outOfStock")}
             </div>
           )}
 
           <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
             <Button
               size="sm"
-              variant={isFavorited ? "default" : "secondary"}
+              variant={isFavorited ? "default" : "default"}
               className="rounded-full p-2"
               onClick={(e) => handleButtonClick(e, handleToggleFavorite)}
             >
@@ -196,21 +206,19 @@ export default function ProductCard({
 
         <div className="p-4">
           <div className="mb-2">
-            <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2">
+            <h3 className=" text-lg font-semibold text-primary text-center mb-1 line-clamp-2">
               {getProductName()}
             </h3>
             {getProductDescription() && (
-              <p className="text-sm text-gray-600 line-clamp-2">
+              <p className="text-xs text-center text-gray-600 line-clamp-2">
                 {getProductDescription()}
               </p>
             )}
           </div>
 
           {averageRating > 0 && (
-            <div
-              className={`flex items-center mb-3`}
-            >
-              <div className="flex items-center">
+            <div className={`flex items-center justify-center mb-3`}>
+              <div className="flex items-center ">
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
@@ -222,18 +230,14 @@ export default function ProductCard({
                   />
                 ))}
               </div>
-              <span
-                className={`text-sm text-gray-500 `}
-              >
+              <span className={`text-sm text-gray-500 `}>
                 ({product.rates_count || 0})
               </span>
             </div>
           )}
 
-          <div className="flex items-center justify-between mb-3">
-            <div
-              className={`flex items-center space-x-2 `}
-            >
+          <div className="flex items-center justify-center justify-between mb-3">
+            <div className={`flex items-center space-x-2 `}>
               <span className="text-lg font-bold text-gray-900">
                 {formatPrice(product.price, product.currency, locale)}
               </span>
@@ -246,29 +250,29 @@ export default function ProductCard({
             </div>
             {product.quantity && product.quantity <= 5 && (
               <span className="text-sm text-gray-500">
-                {product.quantity} {t("inStock")}
+                {product.quantity} {t("products.inStock")}
               </span>
             )}
           </div>
 
           {isInStock ? (
             isInCart ? (
-              <div className="flex items-center justify-between bg-purple-50 rounded-lg p-2">
+              <div className="flex items-center justify-between bg-primary-50 rounded-lg p-2">
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-8 w-8 p-0 border-purple-200 hover:bg-purple-100"
+                  className="h-8 w-8 p-0 border-primary-200 hover:bg-primary-100"
                   onClick={(e) => handleButtonClick(e, handleDecreaseQuantity)}
                 >
                   <span className="text-secondary font-bold">-</span>
                 </Button>
-                <span className="text-sm font-semibold text-purple-700 px-3">
+                <span className="text-sm font-semibold text-primary-700 px-3">
                   {cartQuantity}
                 </span>
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-8 w-8 p-0 border-purple-200 hover:bg-purple-100"
+                  className="h-8 w-8 p-0 border-primary-200 hover:bg-primary-100"
                   onClick={(e) => handleButtonClick(e, handleIncreaseQuantity)}
                 >
                   <span className="text-secondary font-bold">+</span>
@@ -276,17 +280,17 @@ export default function ProductCard({
               </div>
             ) : (
               <Button
-                className="w-full bg-secondary hover:bg-purple-700"
+                className="w-full bg-primary hover:bg-secondary-700"
                 size="sm"
                 onClick={(e) => handleButtonClick(e, handleAddToCart)}
               >
                 <ShoppingBag className={`h-4 w-4`} />
-                {t("addToCart")}
+                {t("products.addToCart")}
               </Button>
             )
           ) : (
             <Button className="w-full" size="sm" disabled>
-              {t("outOfStock")}
+              {t("products.outOfStock")}
             </Button>
           )}
         </div>
