@@ -69,14 +69,10 @@ export default function ProductsPageClient({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [products, setProducts] = useState<ProductWithUserData[]>(
-    initialProducts ?? []
-  );
+  const [products, setProducts] = useState<ProductWithUserData[]>(initialProducts ?? []);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState(initialQuery);
-  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
-    initialCategorySlug
-  );
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>( initialCategorySlug);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [showFilters, setShowFilters] = useState(false);
@@ -84,6 +80,34 @@ export default function ProductsPageClient({
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
 
+ const useUpdateURL = () => {
+  const pathname = usePathname();
+  const router = useRouter();
+  const currentSearchParams = useSearchParams();
+
+  const updateURL = useCallback(
+    (params: Record<string, string | undefined>) => {
+      const current = new URLSearchParams(currentSearchParams.toString());
+
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          current.set(key, value);
+        } else {
+          current.delete(key);
+        }
+      });
+
+      const search = current.toString();
+      const query = search ? `?${search}` : "";
+      router.replace(`${pathname}${query}`);
+    },
+    [pathname, router, currentSearchParams]
+  );
+
+  return updateURL;
+  };
+  
+    const updateURL = useUpdateURL();
   // Initialize pagination data on mount
   useEffect(() => {
     // Calculate initial pagination based on products length and page size
@@ -117,9 +141,18 @@ export default function ProductsPageClient({
       setSortBy(sortParam);
     }
   }, [searchParams]);
+
+useEffect(() => {
+  if (!selectedCategory) return;
+
+  handleSearch(searchQuery, selectedCategory, 1); // reset to page 1
+}, [selectedCategory]);
+  
   useEffect(() => {
     setProducts(initialProducts ?? []);
   }, [initialProducts]);
+
+
   const getCategoryName = (category: Category) => {
     return locale === "ar"
       ? category.name_ar || category.name_en
@@ -134,63 +167,151 @@ export default function ProductsPageClient({
     return category ? getCategoryName(category) : null;
   };
 
-  const updateURL = useCallback(
-    (params: Record<string, string | undefined>) => {
-      const current = new URLSearchParams(searchParams.toString());
+  // const updateURL = useCallback(
+  //   (params: Record<string, string | undefined>) => {
+  //     const current = new URLSearchParams(searchParams.toString());
 
-      Object.entries(params).forEach(([key, value]) => {
-        if (value) {
-          current.set(key, value);
-        } else {
-          current.delete(key);
-        }
-      });
+  //     Object.entries(params).forEach(([key, value]) => {
+  //       if (value) {
+  //         current.set(key, value);
+  //       } else {
+  //         current.delete(key);
+  //       }
+  //     });
 
-      const search = current.toString();
-      const query = search ? `?${search}` : "";
-      router.replace(`${pathname}${query}`);
+  //     const search = current.toString();
+  //     const query = search ? `?${search}` : "";
+  //     router.replace(`${pathname}${query}`);
+  //   },
+  //   [pathname, router, searchParams]
+  // );
+
+
+  // const searchAction = useAction(
+  //   async (params: any) => {
+  //     const searchParams = new URLSearchParams();
+  //     if (params.query) searchParams.set("q", params.query);
+  //     if (params.categorySlug)
+  //       searchParams.set("category", params.categorySlug);
+  //     searchParams.set("page", params.page.toString());
+  //     searchParams.set("sort", params.sort);
+
+  //     const response = await fetch(`/api/products?${searchParams.toString()}`);
+  //     const data = await response.json();
+  //     return data;
+  //   },
+  //   {
+  //     onSuccess: (data: any) => {
+  //        console.log("📦 data received:", data);
+  //       console.log("📦 type:", typeof data);
+  //       if (!data || !data.products) {
+  //         console.error("Invalid data format:", data);
+  //         return;
+  //       }
+  //       setProducts(data.products ?? []);
+  //       setPage(data.page || 1);
+  //       setTotalPages(data.totalPages || 1);
+  //       setTotalProducts(data.total || 0);
+  //     },
+  //     onError: (error) => {
+  //       console.error("Error searching products:", error);
+  //     },
+  //   }
+  // );
+
+
+const [productsData, setProductsData] = useState<any>(null);
+
+// const searchAction = useAction(
+//   async (params: any) => {
+//     const searchParams = new URLSearchParams();
+//     if (params.query) searchParams.set("q", params.query);
+//     if (params.categorySlug) searchParams.set("category", params.categorySlug);
+//     searchParams.set("page", params.page.toString());
+//     searchParams.set("sort", params.sort);
+
+//     const response = await fetch(`/api/products?${searchParams.toString()}`);
+//     const data = await response.json();
+//     console.log("✅ Products Response first:", data);
+    
+//     setProductsData(data); // تخزين النتيجة في state
+//     return params; // حتى لا يسبب مشكلة في onSuccess
+//   },
+//   {
+//     onSuccess: (inputParams: any) => {
+//       console.log("🎯 ProductsData (from state):", productsData);
+//       if (!productsData || !productsData.products) {
+//         console.error("❌ Invalid data format from state:", productsData);
+//         return;
+//       }
+//       console.log("✅ Valid products:", productsData.products);
+//         setProducts(productsData.products ?? []);
+//         setPage(productsData.page || 1);
+//         setTotalPages(productsData.totalPages || 1);
+//         setTotalProducts(productsData.total || 0);
+//     },
+//     onError: (error) => {
+//         console.error("Error searching products:", error);
+//       },
+//   }
+// );
+
+
+const searchAction = useAction(
+  async (params: any) => {
+    const searchParams = new URLSearchParams();
+    if (params.query) searchParams.set("q", params.query);
+    if (params.categorySlug) searchParams.set("category", params.categorySlug);
+    searchParams.set("page", params.page.toString());
+    searchParams.set("sort", params.sort);
+
+    const response = await fetch(`/api/products?${searchParams.toString()}`);
+    const data = await response.json();
+    console.log("✅ Products Response first:", data);
+
+    return {
+      input: params,
+      data, // ⬅️ نضمن إنها توصل في onSuccess
+    };
+  },
+  {
+    onSuccess: (res: any) => {
+      console.log("✅ Full Response:", res);
+      const data = res.data;
+
+      if (!data || !data.products) {
+        console.error("❌ Invalid data format:", data);
+        return;
+      }
+
+      setProducts(data.products ?? []);
+      setPage(data.currentPage || 1);
+      setTotalPages(data.totalPages || 1);
+      setTotalProducts(data.total || 0);
     },
-    [pathname, router, searchParams]
-  );
-
-  const searchAction = useAction(
-    async (params: any) => {
-      const searchParams = new URLSearchParams();
-      if (params.query) searchParams.set("q", params.query);
-      if (params.categorySlug)
-        searchParams.set("category", params.categorySlug);
-      searchParams.set("page", params.page.toString());
-      searchParams.set("sort", params.sort);
-
-      const response = await fetch(`/api/products?${searchParams.toString()}`);
-      const data = await response.json();
-      return data;
+    onError: (error) => {
+      console.error("Error searching products:", error);
     },
-    {
-      onSuccess: (data: any) => {
-        if (!data || !data.products) {
-          console.error("Invalid data format:", data);
-          return;
-        }
-        setProducts(data.products ?? []);
-        setPage(data.page || 1);
-        setTotalPages(data.totalPages || 1);
-        setTotalProducts(data.total || 0);
-      },
-      onError: (error) => {
-        console.error("Error searching products:", error);
-      },
-    }
-  );
+  }
+);
 
   const handleSearch = useCallback(
     async (query: string, categorySlug?: string, newPage = 1) => {
       // Update URL without reloading
+      // updateURL({
+      //   q: query || undefined,
+      //   category: categorySlug?.toString(),
+      //   page: newPage > 1 ? newPage.toString() : undefined,
+      //   sort: sortBy !== "newest" ? sortBy : undefined,
+      // });
+      
+
+      // لما تختاري فلتر جديد:
       updateURL({
-        q: query || undefined,
-        category: categorySlug?.toString(),
-        page: newPage > 1 ? newPage.toString() : undefined,
+        category: selectedCategory,
+        q: searchQuery,
         sort: sortBy !== "newest" ? sortBy : undefined,
+        page: "1", // Reset page to 1 on filter change
       });
 
       // Execute the search action
@@ -215,11 +336,11 @@ export default function ProductsPageClient({
     setSelectedCategory(undefined);
     setSortBy("newest");
     updateURL({
-      q: undefined,
-      category: undefined,
-      page: undefined,
-      sort: undefined,
-    });
+        category: undefined,
+        q: undefined,
+        sort:  "newest" ,
+        page: "1", // Reset page to 1 on filter change
+      });
     handleSearch("", undefined, 1);
   };
 

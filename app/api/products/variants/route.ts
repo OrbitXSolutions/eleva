@@ -3,6 +3,7 @@ import { ProductWithUserData } from "@/lib/types/database.types";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
+  console.log("Fetching variants for gr");
   try {
     const { searchParams } = new URL(request.url);
     const variantGroup = searchParams.get("group");
@@ -14,6 +15,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    console.log("Fetching variants for group:", variantGroup);
     const supabase = await createSsrClient();
 
     // Get user for personalized data
