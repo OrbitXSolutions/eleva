@@ -5,7 +5,7 @@ import type React from "react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAction } from "next-safe-action/hooks";
-import { registerAction } from "@/app/_actions/auth";
+import { registerWithEmailAction } from "@/app/_actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,16 +30,21 @@ export default function RegisterForm() {
   });
   const router = useRouter();
 
-  const { execute, result, isExecuting } = useAction(registerAction, {
-    onSuccess: ({ data }) => {
-      if (data?.success && data.needsVerification && data.phone) {
-        router.push(`/auth/verify-otp?phone=${encodeURIComponent(data.phone)}`);
-      } else if (data?.success && !data.needsVerification) {
-        router.push("/");
-        router.refresh();
-      }
-    },
-  });
+  const { execute, result, isExecuting } = useAction(
+    registerWithEmailAction,
+    {
+      onSuccess: ({ data }) => {
+        if (data?.success && data.needsVerification && data.email) {
+          router.push(
+            `/auth/check-email?email=${encodeURIComponent(data.email)}`
+          );
+        } else if (data?.success && !data.needsVerification) {
+          router.push("/");
+          router.refresh();
+        }
+      },
+    }
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
