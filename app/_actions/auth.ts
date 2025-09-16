@@ -28,6 +28,20 @@ import {
 
 const action = createSafeActionClient();
 
+// Temporary local type until Supabase generated types are added
+// Reflects columns used in this file
+interface UserRow {
+  id?: string;
+  user_id: string;
+  email?: string | null;
+  phone?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  full_name?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
+
 export const registerAction = action
   .inputSchema(registerSchema)
   .action(async ({ parsedInput }) => {
@@ -99,6 +113,85 @@ export const registerAction = action
     }
   });
 
+// New email-first registration action
+export const registerWithEmailAction = action
+  .inputSchema(registerSchema)
+  .action(async ({ parsedInput }) => {
+    const { firstName, lastName, email, phone, password } = parsedInput;
+    const supabase = await createSsrClient();
+
+    try {
+      // Sign up primarily with email
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            full_name: `${firstName} ${lastName}`,
+            phone: phone,
+            // Store phone in metadata (will be verified / set later if needed)
+            phone_unverified: phone,
+          },
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/auth/confirm`,
+        },
+      });
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      // If user exists but no session -> email confirmation required
+      if (data.user && !data.session) {
+        return {
+          success: true,
+          message:
+            "Registration successful! Please check your email to verify your account.",
+          // Using needsVerification to mean email verification now
+          needsVerification: true,
+          email,
+        };
+      }
+
+      // If session exists immediately (e.g., email confirmation disabled) upsert user profile
+      if (data.user && data.session) {
+        try {
+          const { error: upsertError } = await supabase.from("users").upsert({
+            user_id: data.user.id,
+            email: data.user.email || email,
+            phone: data.user.phone,
+            first_name: data.user.user_metadata?.first_name || firstName,
+            last_name: data.user.user_metadata?.last_name || lastName,
+            full_name:
+              data.user.user_metadata?.full_name || `${firstName} ${lastName}`,
+            updated_at: new Date().toISOString(),
+          } as any);
+          if (upsertError) {
+            console.error(
+              "Error upserting user after email signup:",
+              upsertError
+            );
+          }
+        } catch (err) {
+          console.error(
+            "Unexpected error upserting user after email signup:",
+            err
+          );
+        }
+      }
+
+      return {
+        success: true,
+        message: "Registration successful!",
+        needsVerification: false,
+      };
+    } catch (error) {
+      console.error("Email registration error:", error);
+      return { error: "An unexpected error occurred during registration" };
+    }
+  });
+
 export const loginAction = action
   .schema(loginSchema)
   .action(async ({ parsedInput }) => {
@@ -152,7 +245,7 @@ export const loginAction = action
           last_name: data.user.user_metadata?.last_name,
           full_name: data.user.user_metadata?.full_name,
           updated_at: new Date().toISOString(),
-        });
+        } as any);
 
         if (upsertError) {
           console.error("Error upserting user:", upsertError);
@@ -188,7 +281,6 @@ export const verifyOtpAction = action
       if (data.user) {
         // Create user in public.users table
         if (data.user.user_metadata?.user_id) {
-
           const { error: insertError } = await supabase
             .from("users")
             .upsert({
@@ -201,7 +293,7 @@ export const verifyOtpAction = action
               full_name: data.user.user_metadata?.full_name,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
-            })
+            } as any)
             .eq("user_id", data.user.id);
 
           if (insertError) {
@@ -239,7 +331,9 @@ export const resendOtpAction = action
       if (error) {
         // Handle specific error cases
         if (error.message.includes("rate limit")) {
-          return { error: "Too many requests. Please wait before trying again." };
+          return {
+            error: "Too many requests. Please wait before trying again.",
+          };
         }
         if (error.message.includes("invalid phone")) {
           return { error: "Invalid phone number format." };
@@ -415,7 +509,7 @@ export async function verifyOtp(input: UserVerifyPhone) {
   ) {
     throw new Error(
       "Invalid user data: " +
-      JSON.stringify(parsedInput.error?.issues ?? `Invalid input`)
+        JSON.stringify(parsedInput.error?.issues ?? `Invalid input`)
     );
   }
 }
