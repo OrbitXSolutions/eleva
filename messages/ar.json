@@ -94,7 +94,6 @@
       "ratingLow": "التقييم: من الأقل للأعلى"
     },
     "sortBy": "ترتيب حسب",
-    "description": "الوصف",
     "details": "تفاصيل المنتج",
     "quantity": "الكمية",
     "available": "متوفر",
@@ -265,6 +264,7 @@
       "register": {
         "title": "إنشاء حساب",
         "subtitle": "انضم إلى إليفا اليوم",
+        "checkEmailTitle": "تحقق من بريدك الإلكتروني",
         "firstName": "الاسم الأول",
         "firstNamePlaceholder": "الاسم الأول",
         "lastName": "اسم العائلة",
